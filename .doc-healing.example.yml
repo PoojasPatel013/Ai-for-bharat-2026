@@ -1,0 +1,80 @@
+# Example configuration file for Self-Healing Documentation Engine
+# Place this file as .doc-healing.yml in your repository root
+
+enabled: true
+
+# Documentation file patterns (glob syntax)
+documentation:
+  include:
+    - "docs/**/*.md"
+    - "README.md"
+    - "*.mdx"
+  exclude:
+    - "docs/archive/**"
+    - "__pycache__/**"
+    - "venv/**"
+
+# Language-specific settings
+languages:
+  python:
+    enabled: true
+    timeout: 30  # seconds
+    dependencies:
+      - "requests"
+      - "pytest"
+    customSetup: |
+      pip install -r requirements.txt
+  
+  javascript:
+    enabled: true
+    timeout: 20
+    dependencies:
+      - "axios"
+    customSetup: ""
+  
+  typescript:
+    enabled: true
+    timeout: 25
+    dependencies: []
+  
+  java:
+    enabled: true
+    timeout: 60  # Longer for compilation
+    dependencies: []
+  
+  go:
+    enabled: true
+    timeout: 45
+    dependencies: []
+  
+  rust:
+    enabled: true
+    timeout: 90  # Longest for compilation
+    dependencies: []
+
+# Validation behavior
+validation:
+  autoCorrect: true
+  confidenceThreshold: 0.8  # Minimum confidence for auto-correction
+  requireManualReview: false  # Flag corrections for review even if validated
+  blockOnFailure: true  # Block PR merging if validation fails
+  parallelExecution: true
+  maxConcurrentSnippets: 10
+
+# Bot behavior
+notifications:
+  prComments: true  # Post summary comments
+  statusChecks: true  # Create GitHub/GitLab status checks
+  reviewComments: true  # Create line-specific review comments
+  emailAlerts: false  # Email on validation failures
+
+# Code snippet markers
+snippetMarkers:
+  codeBlockLanguages:
+    - "python"
+    - "javascript"
+    - "typescript"
+    - "java"
+    - "go"
+    - "rust"
+  ignoreMarker: "<!-- doc-healing:ignore -->"  # Skip validation for marked snippets
