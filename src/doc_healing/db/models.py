@@ -12,8 +12,8 @@ from sqlalchemy import (
     Index,
     BigInteger,
     Numeric,
+    JSON,
 )
-from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import relationship
 
 from doc_healing.db.base import Base
@@ -30,7 +30,7 @@ class Repository(Base):
     name = Column(String(255), nullable=False)
     full_name = Column(String(511), nullable=False)
     installation_id = Column(BigInteger, nullable=True)
-    config = Column(JSONB, default={})
+    config = Column(JSON, default={})
     created_at = Column(TIMESTAMP, default=datetime.utcnow)
     updated_at = Column(TIMESTAMP, default=datetime.utcnow, onupdate=datetime.utcnow)
 
@@ -164,7 +164,7 @@ class WebhookEventDB(Base):
     repository_id = Column(Integer, ForeignKey("repositories.id"), nullable=False)
     event_type = Column(String(100), nullable=False)
     event_id = Column(String(255))
-    payload = Column(JSONB, nullable=False)
+    payload = Column(JSON, nullable=False)
     processed_at = Column(TIMESTAMP, nullable=True)
     status = Column(String(50), default="pending")
     error_message = Column(Text, nullable=True)

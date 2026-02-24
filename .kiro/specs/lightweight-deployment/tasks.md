@@ -7,7 +7,7 @@ This implementation plan transforms the Self-Healing Documentation Engine from a
 ## Tasks
 
 - [ ] 1. Create configuration system and settings management
-  - [-] 1.1 Implement configuration models with deployment modes
+  - [x] 1.1 Implement configuration models with deployment modes
     - Create `src/doc_healing/config.py` with Settings class
     - Define DeploymentMode, DatabaseBackend, and QueueBackend enums
     - Add environment variable loading with pydantic-settings
@@ -24,14 +24,14 @@ This implementation plan transforms the Self-Healing Documentation Engine from a
     - _Requirements: 4.2_
 
 - [ ] 2. Implement database abstraction layer
-  - [~] 2.1 Create database connection factory with backend support
+  - [x] 2.1 Create database connection factory with backend support
     - Implement `get_database_url()` function in `src/doc_healing/db/connection.py`
     - Add SQLite-specific configuration (check_same_thread=False)
     - Add PostgreSQL-specific configuration (connection pooling)
     - Update `get_db()` dependency to use factory
     - _Requirements: 2.1, 2.2_
   
-  - [~] 2.2 Update database models for cross-database compatibility
+  - [x] 2.2 Update database models for cross-database compatibility
     - Review existing models in `src/doc_healing/db/models.py`
     - Replace PostgreSQL-specific types with generic SQLAlchemy types
     - Ensure all models work with both PostgreSQL and SQLite
@@ -51,11 +51,11 @@ This implementation plan transforms the Self-Healing Documentation Engine from a
     - Test database URL parsing
     - _Requirements: 2.1, 2.2_
 
-- [~] 3. Checkpoint - Ensure database abstraction tests pass
+- [x] 3. Checkpoint - Ensure database abstraction tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
 - [ ] 4. Implement queue abstraction layer
-  - [~] 4.1 Create queue backend interface
+  - [-] 4.1 Create queue backend interface
     - Create `src/doc_healing/queue/base.py` with QueueBackend abstract class
     - Define Task dataclass
     - Define abstract methods: enqueue, get_task, mark_complete, mark_failed

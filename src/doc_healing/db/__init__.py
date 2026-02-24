@@ -1,6 +1,7 @@
 """Database configuration and models."""
 
-from doc_healing.db.base import Base, get_db, engine
+from doc_healing.db.base import Base
+from doc_healing.db.connection import get_db, engine
 from doc_healing.db.models import (
     Repository,
     PullRequest,
