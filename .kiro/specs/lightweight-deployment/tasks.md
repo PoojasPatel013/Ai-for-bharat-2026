@@ -67,14 +67,14 @@ This implementation plan transforms the Self-Healing Documentation Engine from a
     - Wrap existing RQ functionality with new interface
     - _Requirements: 3.3_
   
-  - [-] 4.3 Implement in-memory queue backend
+  - [x] 4.3 Implement in-memory queue backend
     - Create `src/doc_healing/queue/memory_backend.py`
     - Implement MemoryQueueBackend with threading.Queue
     - Add synchronous execution mode support
     - Add worker thread pool for async mode
     - _Requirements: 3.1, 3.2_
   
-  - [~] 4.4 Create queue backend factory
+  - [-] 4.4 Create queue backend factory
     - Create `src/doc_healing/queue/factory.py`
     - Implement `get_queue_backend()` function
     - Add backend selection based on configuration
