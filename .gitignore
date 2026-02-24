@@ -1,5 +1,6 @@
 .vscode
 
+.coverage*
 # Python
 __pycache__/
 *.py[cod]

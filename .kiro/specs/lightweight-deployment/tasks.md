@@ -55,19 +55,19 @@ This implementation plan transforms the Self-Healing Documentation Engine from a
   - Ensure all tests pass, ask the user if questions arise.
 
 - [ ] 4. Implement queue abstraction layer
-  - [-] 4.1 Create queue backend interface
+  - [x] 4.1 Create queue backend interface
     - Create `src/doc_healing/queue/base.py` with QueueBackend abstract class
     - Define Task dataclass
     - Define abstract methods: enqueue, get_task, mark_complete, mark_failed
     - _Requirements: 3.3_
   
-  - [~] 4.2 Implement Redis queue backend
+  - [x] 4.2 Implement Redis queue backend
     - Create `src/doc_healing/queue/redis_backend.py`
     - Implement RedisQueueBackend using existing RQ integration
     - Wrap existing RQ functionality with new interface
     - _Requirements: 3.3_
   
-  - [~] 4.3 Implement in-memory queue backend
+  - [-] 4.3 Implement in-memory queue backend
     - Create `src/doc_healing/queue/memory_backend.py`
     - Implement MemoryQueueBackend with threading.Queue
     - Add synchronous execution mode support
