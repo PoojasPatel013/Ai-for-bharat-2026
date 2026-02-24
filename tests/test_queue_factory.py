@@ -189,4 +189,8 @@ def test_factory_with_memory_backend_configuration():
         backend.shutdown()
 
 
-def test_reset_que
+def test_reset_queue_backend_when_none_exists():
+    """Test that reset_queue_backend handles case when no backend exists."""
+    # Should not raise an error
+    reset_queue_backend()
+    reset_queue_backend()  # Call twice to ensure idempotency

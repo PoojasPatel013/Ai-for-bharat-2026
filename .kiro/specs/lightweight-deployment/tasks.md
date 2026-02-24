@@ -74,7 +74,7 @@ This implementation plan transforms the Self-Healing Documentation Engine from a
     - Add worker thread pool for async mode
     - _Requirements: 3.1, 3.2_
   
-  - [-] 4.4 Create queue backend factory
+  - [x] 4.4 Create queue backend factory
     - Create `src/doc_healing/queue/factory.py`
     - Implement `get_queue_backend()` function
     - Add backend selection based on configuration
@@ -98,18 +98,18 @@ This implementation plan transforms the Self-Healing Documentation Engine from a
     - Test empty queue behavior
     - _Requirements: 3.1, 3.2_
 
-- [~] 5. Checkpoint - Ensure queue abstraction tests pass
+- [x] 5. Checkpoint - Ensure queue abstraction tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
 - [ ] 6. Implement unified worker process
-  - [~] 6.1 Create unified worker implementation
+  - [x] 6.1 Create unified worker implementation
     - Create `src/doc_healing/workers/unified.py`
     - Implement UnifiedWorker class that handles all queue types
     - Add support for sync and async processing modes
     - Add graceful shutdown handling
     - _Requirements: 1.2, 1.3_
   
-  - [~] 6.2 Update existing worker tasks to use queue abstraction
+  - [-] 6.2 Update existing worker tasks to use queue abstraction
     - Update webhook processing tasks in `src/doc_healing/workers/tasks.py`
     - Update validation tasks to use queue backend interface
     - Update healing tasks to use queue backend interface
