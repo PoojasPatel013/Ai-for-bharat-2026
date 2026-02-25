@@ -11,8 +11,6 @@ from typing import Optional
 from doc_healing.config import QueueBackend as QueueBackendEnum
 from doc_healing.config import get_settings
 from doc_healing.queue.base import QueueBackend
-from doc_healing.queue.memory_backend import MemoryQueueBackend
-from doc_healing.queue.redis_backend import RedisQueueBackend
 
 logger = logging.getLogger(__name__)
 
@@ -50,9 +48,13 @@ def get_queue_backend() -> QueueBackend:
         settings = get_settings()
         
         if settings.queue_backend == QueueBackendEnum.REDIS:
+            # Lazy import to avoid Windows fork context issues
+            from doc_healing.queue.redis_backend import RedisQueueBackend
             logger.info("Initializing Redis queue backend")
             _queue_backend = RedisQueueBackend()
         else:  # QueueBackendEnum.MEMORY
+            # Lazy import for consistency
+            from doc_healing.queue.memory_backend import MemoryQueueBackend
             logger.info("Initializing in-memory queue backend")
             _queue_backend = MemoryQueueBackend()
         
@@ -78,6 +80,9 @@ def reset_queue_backend() -> None:
     global _queue_backend
     
     if _queue_backend is not None:
+        # Lazy import for type checking
+        from doc_healing.queue.memory_backend import MemoryQueueBackend
+        
         # Gracefully shutdown memory backend if applicable
         if isinstance(_queue_backend, MemoryQueueBackend):
             _queue_backend.shutdown()

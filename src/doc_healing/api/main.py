@@ -9,15 +9,6 @@ from pydantic import BaseModel
 from doc_healing.config import get_settings
 from doc_healing.db.connection import engine
 from doc_healing.db.base import Base
-from doc_healing.queue.factory import get_queue_backend
-from doc_healing.workers.tasks import (
-    process_github_webhook,
-    process_gitlab_webhook,
-    validate_code_snippet,
-    validate_documentation_file,
-    heal_code_snippet,
-    heal_documentation_file,
-)
 
 # Configure logging
 logging.basicConfig(
@@ -110,3 +101,233 @@ async def root() -> dict[str, str]:
 async def health() -> JSONResponse:
     """Health check endpoint."""
     return JSONResponse(content={"status": "healthy"}, status_code=200)
+
+
+# Webhook Endpoints
+
+@app.post("/webhooks/github", response_model=TaskResponse)
+async def handle_github_webhook(payload: Dict[str, Any]) -> TaskResponse:
+    """Handle GitHub webhook events.
+    
+    Enqueues a task to process the GitHub webhook payload.
+    
+    Args:
+        payload: The webhook payload from GitHub
+        
+    Returns:
+        TaskResponse with task_id and status
+        
+    Raises:
+        HTTPException: If enqueuing fails
+    """
+    try:
+        # Lazy import to avoid Windows fork context issues
+        from doc_healing.queue.factory import get_queue_backend
+        from doc_healing.workers.tasks import process_github_webhook
+        
+        queue = get_queue_backend()
+        task = queue.enqueue("webhooks", process_github_webhook, payload)
+        logger.info(f"Enqueued GitHub webhook task: {task.id}")
+        return TaskResponse(
+            task_id=task.id,
+            status="queued",
+            queue_name="webhooks"
+        )
+    except Exception as e:
+        logger.error(f"Failed to enqueue GitHub webhook: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to enqueue webhook: {str(e)}")
+
+
+@app.post("/webhooks/gitlab", response_model=TaskResponse)
+async def handle_gitlab_webhook(payload: Dict[str, Any]) -> TaskResponse:
+    """Handle GitLab webhook events.
+    
+    Enqueues a task to process the GitLab webhook payload.
+    
+    Args:
+        payload: The webhook payload from GitLab
+        
+    Returns:
+        TaskResponse with task_id and status
+        
+    Raises:
+        HTTPException: If enqueuing fails
+    """
+    try:
+        # Lazy import to avoid Windows fork context issues
+        from doc_healing.queue.factory import get_queue_backend
+        from doc_healing.workers.tasks import process_gitlab_webhook
+        
+        queue = get_queue_backend()
+        task = queue.enqueue("webhooks", process_gitlab_webhook, payload)
+        logger.info(f"Enqueued GitLab webhook task: {task.id}")
+        return TaskResponse(
+            task_id=task.id,
+            status="queued",
+            queue_name="webhooks"
+        )
+    except Exception as e:
+        logger.error(f"Failed to enqueue GitLab webhook: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to enqueue webhook: {str(e)}")
+
+
+# Validation Endpoints
+
+@app.post("/validate/snippet", response_model=TaskResponse)
+async def validate_snippet(request: ValidationRequest) -> TaskResponse:
+    """Validate a code snippet.
+    
+    Enqueues a task to validate a code snippet from documentation.
+    
+    Args:
+        request: ValidationRequest with file_path, snippet_id, code, and language
+        
+    Returns:
+        TaskResponse with task_id and status
+        
+    Raises:
+        HTTPException: If enqueuing fails
+    """
+    try:
+        # Lazy import to avoid Windows fork context issues
+        from doc_healing.queue.factory import get_queue_backend
+        from doc_healing.workers.tasks import validate_code_snippet
+        
+        queue = get_queue_backend()
+        task = queue.enqueue(
+            "validation",
+            validate_code_snippet,
+            request.file_path,
+            request.snippet_id,
+            request.code,
+            request.language
+        )
+        logger.info(f"Enqueued code snippet validation task: {task.id}")
+        return TaskResponse(
+            task_id=task.id,
+            status="queued",
+            queue_name="validation"
+        )
+    except Exception as e:
+        logger.error(f"Failed to enqueue validation: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to enqueue validation: {str(e)}")
+
+
+@app.post("/validate/file", response_model=TaskResponse)
+async def validate_file(request: FileValidationRequest) -> TaskResponse:
+    """Validate all code snippets in a documentation file.
+    
+    Enqueues a task to validate all code snippets in a documentation file.
+    
+    Args:
+        request: FileValidationRequest with file_path and content
+        
+    Returns:
+        TaskResponse with task_id and status
+        
+    Raises:
+        HTTPException: If enqueuing fails
+    """
+    try:
+        # Lazy import to avoid Windows fork context issues
+        from doc_healing.queue.factory import get_queue_backend
+        from doc_healing.workers.tasks import validate_documentation_file
+        
+        queue = get_queue_backend()
+        task = queue.enqueue(
+            "validation",
+            validate_documentation_file,
+            request.file_path,
+            request.content
+        )
+        logger.info(f"Enqueued file validation task: {task.id}")
+        return TaskResponse(
+            task_id=task.id,
+            status="queued",
+            queue_name="validation"
+        )
+    except Exception as e:
+        logger.error(f"Failed to enqueue file validation: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to enqueue validation: {str(e)}")
+
+
+# Healing Endpoints
+
+@app.post("/heal/snippet", response_model=TaskResponse)
+async def heal_snippet(request: HealingRequest) -> TaskResponse:
+    """Heal a code snippet that failed validation.
+    
+    Enqueues a task to automatically fix a code snippet.
+    
+    Args:
+        request: HealingRequest with file_path, snippet_id, code, language, and errors
+        
+    Returns:
+        TaskResponse with task_id and status
+        
+    Raises:
+        HTTPException: If enqueuing fails
+    """
+    try:
+        # Lazy import to avoid Windows fork context issues
+        from doc_healing.queue.factory import get_queue_backend
+        from doc_healing.workers.tasks import heal_code_snippet
+        
+        queue = get_queue_backend()
+        task = queue.enqueue(
+            "healing",
+            heal_code_snippet,
+            request.file_path,
+            request.snippet_id,
+            request.code,
+            request.language,
+            request.errors
+        )
+        logger.info(f"Enqueued code snippet healing task: {task.id}")
+        return TaskResponse(
+            task_id=task.id,
+            status="queued",
+            queue_name="healing"
+        )
+    except Exception as e:
+        logger.error(f"Failed to enqueue healing: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to enqueue healing: {str(e)}")
+
+
+@app.post("/heal/file", response_model=TaskResponse)
+async def heal_file(request: FileHealingRequest) -> TaskResponse:
+    """Heal all invalid code snippets in a documentation file.
+    
+    Enqueues a task to automatically fix all invalid code snippets in a file.
+    
+    Args:
+        request: FileHealingRequest with file_path and validation_results
+        
+    Returns:
+        TaskResponse with task_id and status
+        
+    Raises:
+        HTTPException: If enqueuing fails
+    """
+    try:
+        # Lazy import to avoid Windows fork context issues
+        from doc_healing.queue.factory import get_queue_backend
+        from doc_healing.workers.tasks import heal_documentation_file
+        
+        queue = get_queue_backend()
+        task = queue.enqueue(
+            "healing",
+            heal_documentation_file,
+            request.file_path,
+            request.validation_results
+        )
+        logger.info(f"Enqueued file healing task: {task.id}")
+        return TaskResponse(
+            task_id=task.id,
+            status="queued",
+            queue_name="healing"
+        )
+    except Exception as e:
+        logger.error(f"Failed to enqueue file healing: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to enqueue healing: {str(e)}")
+

@@ -1,0 +1,46 @@
+version: '3.8'
+
+services:
+  # API with unified worker (lightweight mode)
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.python
+    container_name: doc-healing-api-lightweight
+    environment:
+      # Deployment mode
+      DOC_HEALING_DEPLOYMENT_MODE: lightweight
+      
+      # Database configuration (SQLite)
+      DOC_HEALING_DATABASE_BACKEND: sqlite
+      DOC_HEALING_SQLITE_PATH: /app/data/doc_healing.db
+      
+      # Queue configuration (in-memory)
+      DOC_HEALING_QUEUE_BACKEND: memory
+      DOC_HEALING_SYNC_PROCESSING: "false"
+      DOC_HEALING_WORKER_THREADS: "2"
+      
+      # API configuration
+      DOC_HEALING_API_HOST: 0.0.0.0
+      DOC_HEALING_API_PORT: "8000"
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./src:/app/src
+      - ./data:/app/data
+    command: uvicorn doc_healing.api.main:app --host 0.0.0.0 --port 8000 --reload
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.5'
+          memory: 256M
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+

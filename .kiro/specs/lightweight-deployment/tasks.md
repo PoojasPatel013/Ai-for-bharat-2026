@@ -132,7 +132,7 @@ This implementation plan transforms the Self-Healing Documentation Engine from a
     - Initialize database with create_all for SQLite support
     - _Requirements: 5.1_
   
-  - [-] 7.2 Update API endpoints to use queue factory
+  - [x] 7.2 Update API endpoints to use queue factory
     - Replace direct RQ usage with `get_queue_backend()`
     - Update webhook endpoints
     - Update validation endpoints
@@ -157,11 +157,11 @@ This implementation plan transforms the Self-Healing Documentation Engine from a
     - Test error responses
     - _Requirements: 1.4, 5.1_
 
-- [ ] 8. Checkpoint - Ensure API integration tests pass
+- [x] 8. Checkpoint - Ensure API integration tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
 - [ ] 9. Create deployment configurations
-  - [ ] 9.1 Create lightweight docker-compose configuration
+  - [x] 9.1 Create lightweight docker-compose configuration
     - Create `docker-compose.lightweight.yml`
     - Configure with SQLite and memory queue
     - Use single unified worker container
