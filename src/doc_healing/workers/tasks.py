@@ -8,6 +8,8 @@ with both Redis and in-memory queue backends.
 import logging
 from typing import Any, Dict
 
+from doc_healing.queue.factory import get_queue_backend
+
 logger = logging.getLogger(__name__)
 
 
@@ -39,11 +41,18 @@ def process_github_webhook(payload: Dict[str, Any]) -> None:
     # Process based on event type
     logger.info(f"Processing webhook event type: {event_type}")
     
+    # Get queue backend for enqueuing validation tasks
+    queue = get_queue_backend()
+    
     # TODO: Implement actual webhook processing logic
     # This would typically:
     # 1. Parse the webhook payload
     # 2. Identify affected documentation files
     # 3. Enqueue validation tasks for those files
+    #
+    # Example:
+    # for file_path, content in affected_files:
+    #     queue.enqueue("validation", validate_documentation_file, file_path, content)
     
     logger.info("GitHub webhook processed successfully")
 
@@ -75,7 +84,18 @@ def process_gitlab_webhook(payload: Dict[str, Any]) -> None:
     # Process based on event type
     logger.info(f"Processing webhook event type: {event_type}")
     
+    # Get queue backend for enqueuing validation tasks
+    queue = get_queue_backend()
+    
     # TODO: Implement actual webhook processing logic
+    # This would typically:
+    # 1. Parse the webhook payload
+    # 2. Identify affected documentation files
+    # 3. Enqueue validation tasks for those files
+    #
+    # Example:
+    # for file_path, content in affected_files:
+    #     queue.enqueue("validation", validate_documentation_file, file_path, content)
     
     logger.info("GitLab webhook processed successfully")
 
@@ -114,12 +134,17 @@ def validate_code_snippet(
     if not file_path or not snippet_id or not code or not language:
         raise ValueError("All parameters (file_path, snippet_id, code, language) are required")
     
+    # Get queue backend for enqueuing healing tasks if validation fails
+    queue = get_queue_backend()
+    
     # TODO: Implement actual validation logic
     # This would typically:
     # 1. Set up an isolated execution environment
     # 2. Attempt to compile/execute the code
     # 3. Capture any errors or warnings
     # 4. Return structured validation results
+    # 5. If validation fails, enqueue healing task:
+    #    queue.enqueue("healing", heal_code_snippet, file_path, snippet_id, code, language, errors)
     
     # Placeholder result
     result = {
@@ -157,12 +182,20 @@ def validate_documentation_file(file_path: str, content: str) -> Dict[str, Any]:
     if not file_path or not content:
         raise ValueError("Both file_path and content are required")
     
+    # Get queue backend for enqueuing validation and healing tasks
+    queue = get_queue_backend()
+    
     # TODO: Implement actual file validation logic
     # This would typically:
     # 1. Parse the documentation file
     # 2. Extract all code snippets
-    # 3. Enqueue validation tasks for each snippet
+    # 3. Enqueue validation tasks for each snippet:
+    #    for snippet in snippets:
+    #        queue.enqueue("validation", validate_code_snippet, 
+    #                     file_path, snippet.id, snippet.code, snippet.language)
     # 4. Aggregate results
+    # 5. If any snippets are invalid, enqueue healing task:
+    #    queue.enqueue("healing", heal_documentation_file, file_path, validation_results)
     
     result = {
         "file_path": file_path,
@@ -216,11 +249,16 @@ def heal_code_snippet(
     if not errors:
         logger.warning("No errors provided for healing")
     
+    # Get queue backend (for potential re-validation after healing)
+    queue = get_queue_backend()
+    
     # TODO: Implement actual healing logic
     # This would typically:
     # 1. Analyze the validation errors
     # 2. Use AI/heuristics to generate fixes
-    # 3. Validate the healed code
+    # 3. Validate the healed code by enqueuing validation:
+    #    queue.enqueue("validation", validate_code_snippet, 
+    #                 file_path, snippet_id, healed_code, language)
     # 4. Return the healed code with confidence score
     
     # Placeholder result
@@ -263,10 +301,17 @@ def heal_documentation_file(
     if not file_path or not validation_results:
         raise ValueError("Both file_path and validation_results are required")
     
+    # Get queue backend for enqueuing healing tasks
+    queue = get_queue_backend()
+    
     # TODO: Implement actual file healing logic
     # This would typically:
     # 1. Process validation results
-    # 2. Enqueue healing tasks for invalid snippets
+    # 2. Enqueue healing tasks for invalid snippets:
+    #    for snippet in invalid_snippets:
+    #        queue.enqueue("healing", heal_code_snippet,
+    #                     file_path, snippet.id, snippet.code, 
+    #                     snippet.language, snippet.errors)
     # 3. Aggregate healed code
     # 4. Create pull request with fixes
     

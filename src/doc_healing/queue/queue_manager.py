@@ -92,12 +92,17 @@ class QueueManager:
         return 0
 
 
+
 # Global queue manager instance
 _queue_manager: Optional[QueueManager] = None
 
 
 def get_queue_manager() -> QueueManager:
-    """Get or create queue manager instance."""
+    """Get or create queue manager instance.
+    
+    Returns:
+        Singleton QueueManager instance
+    """
     global _queue_manager
     if _queue_manager is None:
         _queue_manager = QueueManager()

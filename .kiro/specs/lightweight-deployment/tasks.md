@@ -109,7 +109,7 @@ This implementation plan transforms the Self-Healing Documentation Engine from a
     - Add graceful shutdown handling
     - _Requirements: 1.2, 1.3_
   
-  - [-] 6.2 Update existing worker tasks to use queue abstraction
+  - [x] 6.2 Update existing worker tasks to use queue abstraction
     - Update webhook processing tasks in `src/doc_healing/workers/tasks.py`
     - Update validation tasks to use queue backend interface
     - Update healing tasks to use queue backend interface
@@ -126,13 +126,13 @@ This implementation plan transforms the Self-Healing Documentation Engine from a
     - _Requirements: 1.3_
 
 - [ ] 7. Update API to use abstraction layers
-  - [~] 7.1 Update API startup to initialize correct backends
+  - [x] 7.1 Update API startup to initialize correct backends
     - Modify `src/doc_healing/api/main.py` startup event
     - Add logging for deployment mode and backend configuration
     - Initialize database with create_all for SQLite support
     - _Requirements: 5.1_
   
-  - [~] 7.2 Update API endpoints to use queue factory
+  - [-] 7.2 Update API endpoints to use queue factory
     - Replace direct RQ usage with `get_queue_backend()`
     - Update webhook endpoints
     - Update validation endpoints
@@ -157,24 +157,24 @@ This implementation plan transforms the Self-Healing Documentation Engine from a
     - Test error responses
     - _Requirements: 1.4, 5.1_
 
-- [~] 8. Checkpoint - Ensure API integration tests pass
+- [ ] 8. Checkpoint - Ensure API integration tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
 - [ ] 9. Create deployment configurations
-  - [~] 9.1 Create lightweight docker-compose configuration
+  - [ ] 9.1 Create lightweight docker-compose configuration
     - Create `docker-compose.lightweight.yml`
     - Configure with SQLite and memory queue
     - Use single unified worker container
     - Minimize resource limits
     - _Requirements: 1.1, 4.1_
   
-  - [~] 9.2 Create environment configuration templates
+  - [ ] 9.2 Create environment configuration templates
     - Create `.env.lightweight` template
     - Create `.env.full` template
     - Document all configuration options
     - _Requirements: 4.2_
   
-  - [~] 9.3 Create Makefile commands for deployment modes
+  - [ ] 9.3 Create Makefile commands for deployment modes
     - Add `make dev-lightweight` command
     - Add `make dev-full` command
     - Add `make dev-native` command (no Docker)
@@ -188,13 +188,13 @@ This implementation plan transforms the Self-Healing Documentation Engine from a
     - _Requirements: 4.1, 4.3_
 
 - [ ] 10. Implement monitoring and logging
-  - [~] 10.1 Add memory usage monitoring
+  - [ ] 10.1 Add memory usage monitoring
     - Create `src/doc_healing/monitoring/memory.py`
     - Implement memory tracking using psutil
     - Add periodic logging of memory metrics
     - _Requirements: 6.4_
   
-  - [~] 10.2 Add deployment mode logging
+  - [ ] 10.2 Add deployment mode logging
     - Log active deployment mode on startup
     - Log backend configurations (database, queue)
     - Log resource usage periodically
@@ -205,14 +205,14 @@ This implementation plan transforms the Self-Healing Documentation Engine from a
     - **Validates: Requirements 6.4**
 
 - [ ] 11. Create data migration utilities
-  - [~] 11.1 Implement SQLite to PostgreSQL migration script
+  - [ ] 11.1 Implement SQLite to PostgreSQL migration script
     - Create `scripts/migrate_sqlite_to_postgres.py`
     - Export data from SQLite
     - Import data to PostgreSQL
     - Verify data integrity
     - _Requirements: 8.3_
   
-  - [~] 11.2 Implement PostgreSQL to SQLite migration script
+  - [ ] 11.2 Implement PostgreSQL to SQLite migration script
     - Create `scripts/migrate_postgres_to_sqlite.py`
     - Export data from PostgreSQL
     - Import data to SQLite
@@ -226,21 +226,21 @@ This implementation plan transforms the Self-Healing Documentation Engine from a
     - _Requirements: 8.3_
 
 - [ ] 12. Update documentation
-  - [~] 12.1 Update README with lightweight deployment instructions
+  - [ ] 12.1 Update README with lightweight deployment instructions
     - Add "Lightweight Development Mode" section
     - Document prerequisites (Python 3.11+, optional Docker)
     - Add quick start commands for lightweight mode
     - Document configuration options
     - _Requirements: 7.1, 7.2, 7.4_
   
-  - [~] 12.2 Document deployment mode differences
+  - [ ] 12.2 Document deployment mode differences
     - Create comparison table (full vs lightweight vs hybrid)
     - Document memory usage expectations
     - Document feature availability in each mode
     - Add troubleshooting section
     - _Requirements: 7.3, 8.4_
   
-  - [~] 12.3 Add configuration reference documentation
+  - [ ] 12.3 Add configuration reference documentation
     - Document all environment variables
     - Provide configuration examples
     - Document mode switching procedures
@@ -261,7 +261,7 @@ This implementation plan transforms the Self-Healing Documentation Engine from a
     - Document actual memory usage
     - _Requirements: 6.1, 6.2_
 
-- [~] 14. Final checkpoint - Verify all requirements met
+- [ ] 14. Final checkpoint - Verify all requirements met
   - Ensure all tests pass, ask the user if questions arise.
 
 ## Notes
