@@ -63,6 +63,32 @@ poetry run alembic upgrade head
 poetry run uvicorn doc_healing.api.main:app --reload
 ```
 
+### Lightweight Development Mode
+
+For local development without Docker or heavy dependencies, run in lightweight mode using SQLite and an in-memory queue:
+
+```bash
+# Export configuration
+export DOC_HEALING_DEPLOYMENT_MODE=lightweight
+export DOC_HEALING_DATABASE_BACKEND=sqlite
+export DOC_HEALING_QUEUE_BACKEND=memory
+export DOC_HEALING_SYNC_PROCESSING=true
+
+# Or use the make command
+make dev-lightweight
+```
+
+### Deployment Modes Comparison
+
+| Feature | Full Production | Lightweight | Hybrid |
+|---------|-----------------|-------------|--------|
+| **Database** | PostgreSQL | SQLite | SQLite |
+| **Queue** | Redis | In-Memory | Redis |
+| **Workers** | Multiple Containers | Thread Pool / Sync | Single Process |
+| **Memory Target** | ~2GB | < 500MB | ~1GB |
+| **Setup Time** | High (Docker) | Low (Native) | Medium |
+| **Docker Required** | Yes | No | Optional |
+
 ### Running Tests
 
 ```bash
@@ -128,12 +154,16 @@ validation:
 ├── src/doc_healing/          # Main application code
 │   ├── api/                  # FastAPI application
 │   ├── db/                   # Database models and configuration
+│   ├── llm/                  # AWS Bedrock/LLM integration 
 │   ├── models/               # Shared data models
+│   ├── monitoring/           # Performance/Memory monitoring
 │   └── queue/                # Queue management
 ├── tests/                    # Test suite
+├── scripts/                  # Data migration scripts
 ├── alembic/                  # Database migrations
 ├── k8s/                      # Kubernetes manifests
-├── docker-compose.yml        # Local development setup
+├── docker-compose.yml        # Full production setup
+├── docker-compose.lightweight.yml # Lightweight setup
 └── pyproject.toml           # Project dependencies
 
 ```

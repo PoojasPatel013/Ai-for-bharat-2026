@@ -9,6 +9,7 @@ from pydantic import BaseModel
 from doc_healing.config import get_settings
 from doc_healing.db.connection import engine
 from doc_healing.db.base import Base
+from doc_healing.monitoring.memory import log_memory_usage
 
 # Configure logging
 logging.basicConfig(
@@ -89,6 +90,9 @@ async def startup_event():
     logger.info("Initializing database schema...")
     Base.metadata.create_all(bind=engine)
     logger.info("Database schema initialized successfully")
+    
+    # Log memory metrics
+    log_memory_usage(context="server_startup")
 
 
 @app.get("/")

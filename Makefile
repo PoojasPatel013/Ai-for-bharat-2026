@@ -10,6 +10,8 @@ help:
 	@echo "  make docker-up    - Start Docker services"
 	@echo "  make docker-down  - Stop Docker services"
 	@echo "  make migrate      - Run database migrations"
+	@echo "  make dev-lightweight - Run API in lightweight mode (native)"
+	@echo "  make dev-full        - Run API in full production mode (native)"
 
 install:
 	poetry install
@@ -51,5 +53,19 @@ migrate:
 migrate-create:
 	poetry run alembic revision --autogenerate -m "$(message)"
 
-dev:
+dev: dev-lightweight
+
+dev-lightweight:
+	DOC_HEALING_DEPLOYMENT_MODE=lightweight \
+	DOC_HEALING_DATABASE_BACKEND=sqlite \
+	DOC_HEALING_QUEUE_BACKEND=memory \
+	DOC_HEALING_SYNC_PROCESSING=true \
 	poetry run uvicorn doc_healing.api.main:app --reload --host 0.0.0.0 --port 8000
+
+dev-full:
+	DOC_HEALING_DEPLOYMENT_MODE=full \
+	DOC_HEALING_DATABASE_BACKEND=postgresql \
+	DOC_HEALING_QUEUE_BACKEND=redis \
+	poetry run uvicorn doc_healing.api.main:app --reload --host 0.0.0.0 --port 8000
+
+dev-native: dev-lightweight
