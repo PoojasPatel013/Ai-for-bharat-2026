@@ -6,9 +6,10 @@ with both Redis and in-memory queue backends.
 """
 
 import logging
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 from doc_healing.queue.factory import get_queue_backend
+from doc_healing.llm.bedrock_client import BedrockClient
 
 logger = logging.getLogger(__name__)
 
@@ -248,28 +249,57 @@ def heal_code_snippet(
     
     if not errors:
         logger.warning("No errors provided for healing")
+        return {
+            "healed": False,
+            "healed_code": None,
+            "changes": [],
+            "confidence": 0.0,
+            "snippet_id": snippet_id,
+            "file_path": file_path,
+        }
     
     # Get queue backend (for potential re-validation after healing)
     queue = get_queue_backend()
     
-    # TODO: Implement actual healing logic
-    # This would typically:
-    # 1. Analyze the validation errors
-    # 2. Use AI/heuristics to generate fixes
-    # 3. Validate the healed code by enqueuing validation:
-    #    queue.enqueue("validation", validate_code_snippet, 
-    #                 file_path, snippet_id, healed_code, language)
-    # 4. Return the healed code with confidence score
-    
-    # Placeholder result
-    result = {
-        "healed": False,
-        "healed_code": None,
-        "changes": [],
-        "confidence": 0.0,
-        "snippet_id": snippet_id,
-        "file_path": file_path,
-    }
+    # Use Bedrock Client to heal the code
+    try:
+        client = BedrockClient()
+        healed_code = client.heal_code(code, language, errors)
+        
+        if healed_code and healed_code != code:
+            logger.info(f"Successfully healed code snippet {snippet_id}")
+            result = {
+                "healed": True,
+                "healed_code": healed_code,
+                "changes": ["Fixed validation errors using Claude 3 via Bedrock"],
+                "confidence": 0.85,
+                "snippet_id": snippet_id,
+                "file_path": file_path,
+            }
+            
+            # Enqueue validation task for the healed code
+            # queue.enqueue("validation", validate_code_snippet, 
+            #               file_path, snippet_id, healed_code, language)
+        else:
+            logger.warning(f"Failed to heal code snippet {snippet_id}")
+            result = {
+                "healed": False,
+                "healed_code": None,
+                "changes": [],
+                "confidence": 0.0,
+                "snippet_id": snippet_id,
+                "file_path": file_path,
+            }
+    except Exception as e:
+        logger.error(f"Error during code healing: {str(e)}")
+        result = {
+            "healed": False,
+            "healed_code": None,
+            "changes": [],
+            "confidence": 0.0,
+            "snippet_id": snippet_id,
+            "file_path": file_path,
+        }
     
     logger.info(f"Code snippet {snippet_id} healing complete: healed={result['healed']}")
     return result

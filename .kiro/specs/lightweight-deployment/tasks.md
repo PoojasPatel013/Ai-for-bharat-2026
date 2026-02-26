@@ -264,11 +264,43 @@ This implementation plan transforms the Self-Healing Documentation Engine from a
 - [ ] 14. Final checkpoint - Verify all requirements met
   - Ensure all tests pass, ask the user if questions arise.
 
-## Notes
+- [ ] 15. LLM Integration (The "Healing" Engine)
+  - [ ] 15.1 Set up AWS Bedrock Access
+    - Navigate to Amazon Bedrock in the AWS Console
+    - Request model access for **Anthropic Claude 3.5 Sonnet** (best for code) and **Claude 3 Haiku** (faster/cheaper fallback)
+  - [ ] 15.2 Implement LLM Client Layer
+    - Install `boto3` (AWS SDK for Python)
+    - Create `src/doc_healing/llm/bedrock_client.py`
+    - Implement a function to send a prompt to Claude via Bedrock and parse the returned code
+  - [ ] 15.3 Create Healing Prompts
+    - Create `src/doc_healing/llm/prompts.py`
+    - Draft system prompts that instruct the LLM: "You are a documentation auto-fixer. Given this broken code snippet and this error log, output only the corrected code snippet."
+  - [ ] 15.4 Integrate LLM into Unified Worker
+    - Update the healing task in `src/doc_healing/workers/tasks.py` to call the `bedrock_client` when validation fails
+    - Ensure the worker handles API rate limits or timeout errors gracefully
 
-- Tasks marked with `*` are optional and can be skipped for faster MVP
-- Each task references specific requirements for traceability
-- Checkpoints ensure incremental validation at key milestones
-- Property tests validate universal correctness properties across all configurations
-- Unit tests validate specific examples, edge cases, and error conditions
-- The implementation follows a bottom-up approach: configuration → abstraction → integration → deployment
+- [ ] 16. AWS Cloud Deployment (Production Infrastructure)
+  - [ ] 16.1 Container Registry Setup (AWS ECR)
+    - Create an Amazon Elastic Container Registry (ECR) repository
+    - Authenticate Docker with ECR
+    - Build and push your `full` production Docker image to ECR
+  - [ ] 16.2 Database & Queue Setup
+    - Provision an **Amazon RDS** instance (PostgreSQL) for production data
+    - Provision an **Amazon ElastiCache** instance (Redis) for the production task queue
+    - Store the connection URLs in AWS Systems Manager Parameter Store or Secrets Manager
+  - [ ] 16.3 Compute Setup (AWS ECS Fargate)
+    - Create an Amazon ECS Cluster
+    - Create a Task Definition for the **API Server** (mapping port 80/443 to FastAPI)
+    - Create a Task Definition for the **Unified Worker** (running the queue listener)
+    - Set environment variables in the Task Definitions to use the `.env.full` equivalents (pointing to RDS and ElastiCache)
+  - [ ] 16.4 Network & Webhook Exposure
+    - Set up an Application Load Balancer (ALB) to route internet traffic to your API Service
+    - Test the live URL with a mock GitHub webhook payload
+
+- [ ] 17. Security & CI/CD
+  - [ ] 17.1 Implement Secrets Management
+    - Move GitHub Webhook secrets, Bedrock credentials, and DB passwords to AWS Secrets Manager
+    - Update `config.py` to fetch from AWS Secrets Manager in production mode
+  - [ ] 17.2 GitHub Actions Pipeline
+    - Create `.github/workflows/deploy.yml`
+    - Add steps to: run tests -> build docker image -> push to ECR -> update ECS service

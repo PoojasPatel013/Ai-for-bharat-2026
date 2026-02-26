@@ -54,6 +54,10 @@ class Settings(BaseSettings):
     api_host: str = "0.0.0.0"
     api_port: int = 8000
 
+    # LLM Configuration
+    bedrock_model_id: str = "anthropic.claude-3-5-sonnet-20240620-v1:0"
+    bedrock_fallback_model_id: str = "anthropic.claude-3-haiku-20240307-v1:0"
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_prefix="DOC_HEALING_",
