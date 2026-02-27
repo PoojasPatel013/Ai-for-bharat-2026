@@ -43,20 +43,24 @@ Once the script finishes, your database and Redis queue will be running. We need
    aws secretsmanager create-secret --name doc-healing/production/secrets --secret-string file://secrets.json
    ```
 
-## Part 3: Generating AWS Access Keys
+## Part 3: Generating AWS Access Keys (IAM User)
 
-Before GitHub can talk to AWS, you need to create an Access Key for your user.
+AWS correctly warns you that using "Root" account keys is a serious security risk. Instead, you need to create a dedicated **IAM User** specifically for your GitHub Actions pipeline.
 
 1. **Go to your AWS Console**.
-2. Search for **IAM** (Identity and Access Management) in the top search bar and click on it.
+2. Search for **IAM** in the top search bar and click on it.
 3. In the left sidebar, click on **Users**.
-4. Click on your user account (e.g., `Pooja Patel` or whichever user you are logged in as).
-   - *Note: This user must have AdministratorAccess or sufficient permissions to manage ECR, ECS, and SecretsManager.*
-5. Click on the **Security credentials** tab.
-6. Scroll down to the **Access keys** section and click **Create access key**.
-7. Select **Command Line Interface (CLI)** or **Third-party service** as the use case. Check the confirmation box and click **Next**.
-8. Click **Create access key**.
-9. You will now see your **Access key ID** and **Secret access key**. Copy both of these values immediately and store them somewhere safe (you will not be able to see the secret key again later).
+4. Click the orange **Create user** button.
+5. Provide a User name (e.g., `github-actions-deployer`) and click **Next**.
+6. On the permissions page, choose **Attach policies directly**.
+7. In the search box below, search for and check the box next to **AdministratorAccess**. *(Note: For a fully strict production environment, you would hand-pick permissions for ECR, ECS, RDS, and SecretsManager instead, but AdministratorAccess is easiest to guarantee deployment success!)*
+8. Click **Next**, review the details, and click **Create user**.
+9. Now, in the Users list, click on your newly created `github-actions-deployer` user.
+10. Click on the **Security credentials** tab.
+11. Scroll down to the **Access keys** section and click **Create access key**.
+12. Select **Third-party service** as the use case, check the confirmation box, and click **Next**.
+13. Click **Create access key**.
+14. You will now see your **Access key ID** and **Secret access key**. Copy both of these values immediately and store them somewhere safe. This is what GitHub will use!
 
 ## Part 4: How to add Secrets in GitHub
 
