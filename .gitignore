@@ -1,5 +1,6 @@
 .vscode
 
+secrets.json
 .coverage*
 # Python
 __pycache__/
