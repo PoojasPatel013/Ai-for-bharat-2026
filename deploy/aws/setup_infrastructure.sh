@@ -11,9 +11,9 @@ AWS_REGION="ap-south-1"
 ACCOUNT_ID="122610498241"
 
 # --- PLACEHOLDERS ---
-VPC_ID="vpc-xxxxxx" # Replace with your VPC ID
-SUBNET_IDS="subnet-xxxxxx subnet-yyyyyy" # Replace with your subnet IDs (space separated)
-SECURITY_GROUP="sg-xxxxxx" # Replace with your SG ID
+VPC_ID="vpc-0385509f5be9d083b" # Replace with your VPC ID
+SUBNET_IDS="subnet-03f527b3f57d450b7 subnet-01026b3046fafc6f1" # Replace with your subnet IDs (space separated)
+SECURITY_GROUP="sg-0ed4656c2242bc381" # Replace with your SG ID
 
 echo "Starting deployment setup for Doc Healing Engine in $AWS_REGION..."
 
