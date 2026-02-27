@@ -1,0 +1,41 @@
+{
+    "family": "doc-healing-worker",
+    "networkMode": "awsvpc",
+    "requiresCompatibilities": [
+        "FARGATE"
+    ],
+    "cpu": "2048",
+    "memory": "4096",
+    "executionRoleArn": "arn:aws:iam::122610498241:role/ecsTaskExecutionRole",
+    "taskRoleArn": "arn:aws:iam::122610498241:role/ecsTaskRole",
+    "containerDefinitions": [
+        {
+            "name": "doc-healing-app",
+            "image": "122610498241.dkr.ecr.us-east-1.amazonaws.com/doc-healing-engine:latest",
+            "essential": true,
+            "environment": [
+                {
+                    "name": "DOC_HEALING_DEPLOYMENT_MODE",
+                    "value": "full"
+                },
+                {
+                    "name": "DOC_HEALING_AWS_SECRET_NAME",
+                    "value": "doc-healing/production/secrets"
+                },
+                {
+                    "name": "DOC_HEALING_UNIFIED_WORKER",
+                    "value": "true"
+                }
+            ],
+            "logConfiguration": {
+                "logDriver": "awslogs",
+                "options": {
+                    "awslogs-group": "/ecs/doc-healing-worker",
+                    "awslogs-region": "us-east-1",
+                    "awslogs-stream-prefix": "ecs",
+                    "awslogs-create-group": "true"
+                }
+            }
+        }
+    ]
+}

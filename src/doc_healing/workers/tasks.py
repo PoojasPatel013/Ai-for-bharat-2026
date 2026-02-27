@@ -9,7 +9,8 @@ import logging
 from typing import Any, Dict, Optional
 
 from doc_healing.queue.factory import get_queue_backend
-from doc_healing.llm.bedrock_client import BedrockClient
+from doc_healing.llm.bedrock_client import BedrockLLMClient
+from doc_healing.llm.prompts import build_healing_prompt, HEALING_SYSTEM_PROMPT
 
 logger = logging.getLogger(__name__)
 
@@ -263,8 +264,9 @@ def heal_code_snippet(
     
     # Use Bedrock Client to heal the code
     try:
-        client = BedrockClient()
-        healed_code = client.heal_code(code, language, errors)
+        client = BedrockLLMClient()
+        prompt = build_healing_prompt(original_code=code, error_log=str(errors), language=language)
+        healed_code = client.generate_correction(prompt=prompt, system_prompt=HEALING_SYSTEM_PROMPT)
         
         if healed_code and healed_code != code:
             logger.info(f"Successfully healed code snippet {snippet_id}")

@@ -74,4 +74,29 @@ def get_settings() -> Settings:
     global _settings
     if _settings is None:
         _settings = Settings()
+        
+        import os
+        import logging
+        
+        secret_name = os.environ.get("DOC_HEALING_AWS_SECRET_NAME")
+        if secret_name:
+            # We are likely running in an AWS Environment if this is set
+            try:
+                from doc_healing.aws.secrets import get_secret
+                aws_secrets = get_secret(secret_name)
+                
+                # Apply overrides from AWS Secrets
+                if "DATABASE_URL" in aws_secrets:
+                    _settings.database_url = aws_secrets["DATABASE_URL"]
+                if "REDIS_HOST" in aws_secrets:
+                    _settings.redis_host = aws_secrets["REDIS_HOST"]
+                if "REDIS_PORT" in aws_secrets:
+                    _settings.redis_port = int(aws_secrets["REDIS_PORT"])
+                if "BEDROCK_MODEL_ID" in aws_secrets:
+                    _settings.bedrock_model_id = aws_secrets["BEDROCK_MODEL_ID"]
+                    
+                logging.getLogger(__name__).info(f"Loaded credentials securely from AWS Secrets Manager: {secret_name}")
+            except Exception as e:
+                logging.getLogger(__name__).warning(f"Failed to load AWS Secrets '{secret_name}', falling back to local env variables: {e}")
+
     return _settings
