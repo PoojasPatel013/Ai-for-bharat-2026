@@ -1,0 +1,134 @@
+============================= test session starts ==============================
+platform linux -- Python 3.10.12, pytest-7.4.4, pluggy-1.6.0 -- /home/fierypooja/.cache/pypoetry/virtualenvs/ai-doc-healing-jmbp0ghN-py3.10/bin/python
+cachedir: .pytest_cache
+hypothesis profile 'default'
+rootdir: /home/fierypooja/hackproject
+configfile: pytest.ini
+plugins: anyio-4.12.1, hypothesis-6.151.9, asyncio-0.23.8, cov-4.1.0
+asyncio: mode=auto
+collecting ... collected 4 items
+
+tests/test_migration_scripts.py::TestPostgresToSqliteMigration::test_migration_success PASSED
+tests/test_migration_scripts.py::TestPostgresToSqliteMigration::test_migration_error_handling FAILED
+tests/test_migration_scripts.py::TestSqliteToPostgresMigration::test_migration_success PASSED
+tests/test_migration_scripts.py::TestSqliteToPostgresMigration::test_migration_error_handling FAILED
+
+=================================== FAILURES ===================================
+_________ TestPostgresToSqliteMigration.test_migration_error_handling __________
+
+self = <tests.test_migration_scripts.TestPostgresToSqliteMigration object at 0x70371a3a31f0>
+mock_create_engine = <MagicMock name='create_engine' id='123381965838976'>
+
+    @patch('migrate_postgres_to_sqlite.create_engine')
+    def test_migration_error_handling(self, mock_create_engine):
+        """Test migration fails gracefully with engine errors."""
+        mock_create_engine.side_effect = Exception("DB Error")
+>       result = p2s.migrate_data("postgresql://bad/db", "sqlite://bad.db")
+
+tests/test_migration_scripts.py:68: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+scripts/migrate_postgres_to_sqlite.py:19: in migrate_data
+    source_engine = create_engine(postgres_url)
+/usr/lib/python3.10/unittest/mock.py:1114: in __call__
+    return self._mock_call(*args, **kwargs)
+/usr/lib/python3.10/unittest/mock.py:1118: in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <MagicMock name='create_engine' id='123381965838976'>
+args = ('postgresql://bad/db',), kwargs = {}, effect = Exception('DB Error')
+
+    def _execute_mock_call(self, /, *args, **kwargs):
+        # separate from _increment_mock_call so that awaited functions are
+        # executed separately from their call, also AsyncMock overrides this method
+    
+        effect = self.side_effect
+        if effect is not None:
+            if _is_exception(effect):
+>               raise effect
+E               Exception: DB Error
+
+/usr/lib/python3.10/unittest/mock.py:1173: Exception
+_________ TestSqliteToPostgresMigration.test_migration_error_handling __________
+
+self = <tests.test_migration_scripts.TestSqliteToPostgresMigration object at 0x70371a3a21a0>
+mock_create_engine = <MagicMock name='create_engine' id='123381961210944'>
+
+    @patch('migrate_sqlite_to_postgres.create_engine')
+    def test_migration_error_handling(self, mock_create_engine):
+        """Test migration handles database errors correctly."""
+        mock_create_engine.side_effect = Exception("DB Connection Error")
+>       result = s2p.migrate_data("sqlite://bad.db", "postgresql://bad/db")
+
+tests/test_migration_scripts.py:112: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+scripts/migrate_sqlite_to_postgres.py:19: in migrate_data
+    source_engine = create_engine(sqlite_url)
+/usr/lib/python3.10/unittest/mock.py:1114: in __call__
+    return self._mock_call(*args, **kwargs)
+/usr/lib/python3.10/unittest/mock.py:1118: in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <MagicMock name='create_engine' id='123381961210944'>
+args = ('sqlite://bad.db',), kwargs = {}
+effect = Exception('DB Connection Error')
+
+    def _execute_mock_call(self, /, *args, **kwargs):
+        # separate from _increment_mock_call so that awaited functions are
+        # executed separately from their call, also AsyncMock overrides this method
+    
+        effect = self.side_effect
+        if effect is not None:
+            if _is_exception(effect):
+>               raise effect
+E               Exception: DB Connection Error
+
+/usr/lib/python3.10/unittest/mock.py:1173: Exception
+=============================== warnings summary ===============================
+src/doc_healing/db/base.py:6
+  /home/fierypooja/hackproject/src/doc_healing/db/base.py:6: MovedIn20Warning: The ``declarative_base()`` function is now available as sqlalchemy.orm.declarative_base(). (deprecated since: 2.0) (Background on SQLAlchemy 2.0 at: https://sqlalche.me/e/b8d9)
+    Base = declarative_base()
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+
+---------- coverage: platform linux, python 3.10.12-final-0 ----------
+Name                                      Stmts   Miss  Cover   Missing
+-----------------------------------------------------------------------
+src/doc_healing/__init__.py                   1      0   100%
+src/doc_healing/api/__init__.py               0      0   100%
+src/doc_healing/api/main.py                 128    128     0%   3-336
+src/doc_healing/config.py                    35      0   100%
+src/doc_healing/db/__init__.py                4      0   100%
+src/doc_healing/db/base.py                    2      0   100%
+src/doc_healing/db/connection.py             24      6    75%   20, 36, 66-70
+src/doc_healing/db/models.py                142      0   100%
+src/doc_healing/models/__init__.py            8      8     0%   3-44
+src/doc_healing/models/base.py               29     29     0%   3-47
+src/doc_healing/models/config.py             38     38     0%   3-77
+src/doc_healing/models/healing.py            15     15     0%   3-26
+src/doc_healing/models/mapping.py            41     41     0%   3-71
+src/doc_healing/models/orchestration.py      40     40     0%   3-67
+src/doc_healing/models/validation.py         36     36     0%   3-58
+src/doc_healing/models/webhook.py            11     11     0%   3-18
+src/doc_healing/monitoring/__init__.py        0      0   100%
+src/doc_healing/monitoring/memory.py         16     16     0%   8-51
+src/doc_healing/queue/__init__.py             4      4     0%   3-7
+src/doc_healing/queue/base.py                23     23     0%   7-100
+src/doc_healing/queue/factory.py             26     26     0%   8-91
+src/doc_healing/queue/memory_backend.py     105    105     0%   8-264
+src/doc_healing/queue/queue_manager.py       21     21     0%   7-109
+src/doc_healing/queue/redis_backend.py       48     48     0%   7-172
+src/doc_healing/queue/redis_client.py        12     12     0%   3-28
+src/doc_healing/workers/__init__.py           0      0   100%
+src/doc_healing/workers/tasks.py             74     74     0%   8-356
+src/doc_healing/workers/unified.py           87     87     0%   8-221
+-----------------------------------------------------------------------
+TOTAL                                       970    768    21%
+Coverage HTML written to dir htmlcov
+Coverage XML written to file coverage.xml
+
+=========================== short test summary info ============================
+FAILED tests/test_migration_scripts.py::TestPostgresToSqliteMigration::test_migration_error_handling
+FAILED tests/test_migration_scripts.py::TestSqliteToPostgresMigration::test_migration_error_handling
+==================== 2 failed, 2 passed, 1 warning in 0.71s ====================

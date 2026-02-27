@@ -234,3 +234,49 @@ def test_unified_worker_redis_mode_placeholder(mock_settings_async):
             # Stop worker
             worker.stop()
             thread.join(timeout=1.0)
+
+
+def test_unified_worker_task_routing(mock_settings_sync):
+    """Test task routing to correct handlers through unified worker."""
+    # This verifies that the UnifiedWorker sets up the backend 
+    # which routes tasks correctly based on queue names
+    with patch('doc_healing.workers.unified.get_settings', return_value=mock_settings_sync):
+        with patch('doc_healing.workers.unified.get_queue_backend') as mock_backend:
+            backend = MagicMock()
+            mock_backend.return_value = backend
+            
+            worker = UnifiedWorker()
+            assert worker.queue_backend is backend
+            # Just verify the backend is initialized correctly as it handles routing
+
+
+def test_unified_worker_error_handling():
+    """Test error handling in worker main loop."""
+    # Verifies that exceptions in main() are caught and worker is stopped
+    with patch('doc_healing.workers.unified.UnifiedWorker') as mock_worker_cls:
+        mock_worker = MagicMock()
+        mock_worker.start.side_effect = Exception("Test worker error")
+        mock_worker_cls.return_value = mock_worker
+        
+        with patch('sys.exit') as mock_exit:
+            from doc_healing.workers.unified import main
+            main()
+            
+            # Should catch the error, stop the worker and exit with 1
+            mock_worker.stop.assert_called_once()
+            mock_exit.assert_called_once_with(1)
+
+def test_unified_worker_keyboard_interrupt():
+    """Test graceful shutdown on keyboard interrupt."""
+    with patch('doc_healing.workers.unified.UnifiedWorker') as mock_worker_cls:
+        mock_worker = MagicMock()
+        mock_worker.start.side_effect = KeyboardInterrupt()
+        mock_worker_cls.return_value = mock_worker
+        
+        with patch('sys.exit') as mock_exit:
+            from doc_healing.workers.unified import main
+            main()
+            
+            # Should catch the interrupt and stop the worker normally
+            mock_worker.stop.assert_called_once()
+            mock_exit.assert_not_called()

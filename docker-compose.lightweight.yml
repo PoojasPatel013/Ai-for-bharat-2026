@@ -10,16 +10,16 @@ services:
     environment:
       # Deployment mode
       DOC_HEALING_DEPLOYMENT_MODE: lightweight
-      
+
       # Database configuration (SQLite)
       DOC_HEALING_DATABASE_BACKEND: sqlite
       DOC_HEALING_SQLITE_PATH: /app/data/doc_healing.db
-      
+
       # Queue configuration (in-memory)
       DOC_HEALING_QUEUE_BACKEND: memory
       DOC_HEALING_SYNC_PROCESSING: "false"
       DOC_HEALING_WORKER_THREADS: "2"
-      
+
       # API configuration
       DOC_HEALING_API_HOST: 0.0.0.0
       DOC_HEALING_API_PORT: "8000"
@@ -38,9 +38,33 @@ services:
           cpus: '0.5'
           memory: 256M
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      test: [ "CMD", "curl", "-f", "http://localhost:8000/health" ]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 40s
 
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.python
+    container_name: doc-healing-worker-lightweight
+    environment:
+      DOC_HEALING_DEPLOYMENT_MODE: lightweight
+      DOC_HEALING_DATABASE_BACKEND: sqlite
+      DOC_HEALING_SQLITE_PATH: /app/data/doc_healing.db
+      DOC_HEALING_QUEUE_BACKEND: memory
+      DOC_HEALING_SYNC_PROCESSING: "false"
+      DOC_HEALING_WORKER_THREADS: "2"
+      DOC_HEALING_UNIFIED_WORKER: "true"
+    volumes:
+      - ./src:/app/src
+      - ./data:/app/data
+    command: python scripts/run_unified_worker.py
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+    depends_on:
+      - api
