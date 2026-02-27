@@ -6,7 +6,7 @@ on:
       - main
 
 env:
-  AWS_REGION: us-east-1
+  AWS_REGION: ap-south-1
   ECR_REPOSITORY: doc-healing-engine
   ECS_CLUSTER: doc-healing-cluster
   API_SERVICE: doc-healing-api-service

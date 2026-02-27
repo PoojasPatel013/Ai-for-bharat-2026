@@ -7,7 +7,7 @@
 
 set -e
 
-AWS_REGION="us-east-1"
+AWS_REGION="ap-south-1"
 ACCOUNT_ID="122610498241"
 
 # --- PLACEHOLDERS ---

@@ -11,7 +11,7 @@
     "containerDefinitions": [
         {
             "name": "doc-healing-app",
-            "image": "122610498241.dkr.ecr.us-east-1.amazonaws.com/doc-healing-engine:latest",
+            "image": "122610498241.dkr.ecr.ap-south-1.amazonaws.com/doc-healing-engine:latest",
             "essential": true,
             "portMappings": [
                 {
@@ -38,7 +38,7 @@
                 "logDriver": "awslogs",
                 "options": {
                     "awslogs-group": "/ecs/doc-healing-api",
-                    "awslogs-region": "us-east-1",
+                    "awslogs-region": "ap-south-1",
                     "awslogs-stream-prefix": "ecs",
                     "awslogs-create-group": "true"
                 }
