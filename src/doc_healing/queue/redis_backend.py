@@ -31,17 +31,28 @@ class RedisQueueBackend(QueueBackend):
     
     def __init__(self):
         """Initialize Redis queue backend with connection from settings."""
+        import os
         settings = get_settings()
-        self.redis_conn = Redis(
-            host=settings.redis_host,
-            port=settings.redis_port,
-            db=settings.redis_db,
-            decode_responses=False,  # RQ requires bytes mode
-        )
+        redis_password = os.getenv("REDIS_PASSWORD", None)
+        
+        if settings.redis_url:
+            self.redis_conn = Redis.from_url(
+                settings.redis_url,
+                decode_responses=False, # RQ requires bytes mode
+            )
+            logger.info("Initialized Redis queue backend via REDIS_URL")
+        else:
+            self.redis_conn = Redis(
+                host=settings.redis_host,
+                port=settings.redis_port,
+                db=settings.redis_db,
+                password=redis_password,
+                decode_responses=False,  # RQ requires bytes mode
+            )
+            logger.info(
+                f"Initialized Redis queue backend: {settings.redis_host}:{settings.redis_port}"
+            )
         self.queues: dict[str, Queue] = {}
-        logger.info(
-            f"Initialized Redis queue backend: {settings.redis_host}:{settings.redis_port}"
-        )
     
     def _get_queue(self, queue_name: str) -> Queue:
         """Get or create an RQ Queue instance for the given queue name.
