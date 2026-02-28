@@ -1,0 +1,147 @@
+{
+    "services": [
+        {
+            "serviceArn": "arn:aws:ecs:ap-south-1:122610498241:service/doc-healing-cluster/doc-healing-api-service",
+            "serviceName": "doc-healing-api-service",
+            "clusterArn": "arn:aws:ecs:ap-south-1:122610498241:cluster/doc-healing-cluster",
+            "loadBalancers": [],
+            "serviceRegistries": [],
+            "status": "ACTIVE",
+            "desiredCount": 1,
+            "runningCount": 0,
+            "pendingCount": 0,
+            "launchType": "FARGATE",
+            "platformVersion": "LATEST",
+            "platformFamily": "Linux",
+            "taskDefinition": "arn:aws:ecs:ap-south-1:122610498241:task-definition/doc-healing-api:3",
+            "deploymentConfiguration": {
+                "deploymentCircuitBreaker": {
+                    "enable": false,
+                    "rollback": false
+                },
+                "maximumPercent": 200,
+                "minimumHealthyPercent": 100,
+                "strategy": "ROLLING",
+                "bakeTimeInMinutes": 0
+            },
+            "deployments": [
+                {
+                    "id": "ecs-svc/3991561894773381199",
+                    "status": "PRIMARY",
+                    "taskDefinition": "arn:aws:ecs:ap-south-1:122610498241:task-definition/doc-healing-api:3",
+                    "desiredCount": 1,
+                    "pendingCount": 0,
+                    "runningCount": 0,
+                    "failedTasks": 0,
+                    "createdAt": "2026-02-28T10:43:57.187000+05:30",
+                    "updatedAt": "2026-02-28T10:44:27.467000+05:30",
+                    "launchType": "FARGATE",
+                    "platformVersion": "1.4.0",
+                    "platformFamily": "Linux",
+                    "networkConfiguration": {
+                        "awsvpcConfiguration": {
+                            "subnets": [
+                                "subnet-01026b3046fafc6f1",
+                                "subnet-03f527b3f57d450b7"
+                            ],
+                            "securityGroups": [
+                                "sg-0ed4656c2242bc381"
+                            ],
+                            "assignPublicIp": "ENABLED"
+                        }
+                    },
+                    "rolloutState": "IN_PROGRESS",
+                    "rolloutStateReason": "ECS deployment ecs-svc/3991561894773381199 in progress."
+                },
+                {
+                    "id": "ecs-svc/9021651060063184947",
+                    "status": "ACTIVE",
+                    "taskDefinition": "arn:aws:ecs:ap-south-1:122610498241:task-definition/doc-healing-api:2",
+                    "desiredCount": 0,
+                    "pendingCount": 0,
+                    "runningCount": 0,
+                    "failedTasks": 0,
+                    "createdAt": "2026-02-27T22:45:40.981000+05:30",
+                    "updatedAt": "2026-02-28T10:44:27.528000+05:30",
+                    "launchType": "FARGATE",
+                    "platformVersion": "1.4.0",
+                    "platformFamily": "Linux",
+                    "networkConfiguration": {
+                        "awsvpcConfiguration": {
+                            "subnets": [
+                                "subnet-01026b3046fafc6f1",
+                                "subnet-03f527b3f57d450b7"
+                            ],
+                            "securityGroups": [
+                                "sg-0ed4656c2242bc381"
+                            ],
+                            "assignPublicIp": "ENABLED"
+                        }
+                    },
+                    "rolloutState": "IN_PROGRESS",
+                    "rolloutStateReason": "ECS deployment ecs-svc/9021651060063184947 in progress."
+                }
+            ],
+            "roleArn": "arn:aws:iam::122610498241:role/aws-service-role/ecs.amazonaws.com/AWSServiceRoleForECS",
+            "events": [
+                {
+                    "id": "d660d8f4-54e8-40e5-b2a5-79d2ec6b3b5d",
+                    "createdAt": "2026-02-28T10:47:15.685000+05:30",
+                    "message": "(service doc-healing-api-service) failed to launch a task with (error ECS was unable to assume the role 'arn:aws:iam::122610498241:role/ecsTaskRole' that was provided for this task. Please verify that the role being passed has the proper trust relationship and permissions and that your IAM user has permissions to pass this role.)."
+                },
+                {
+                    "id": "1418c021-e148-47cf-bd02-4068d16f0f60",
+                    "createdAt": "2026-02-28T04:47:13.875000+05:30",
+                    "message": "(service doc-healing-api-service) failed to launch a task with (error ECS was unable to assume the role 'arn:aws:iam::122610498241:role/ecsTaskRole' that was provided for this task. Please verify that the role being passed has the proper trust relationship and permissions and that your IAM user has permissions to pass this role.)."
+                },
+                {
+                    "id": "3a104c7d-c4d7-4aee-ae8d-1454edf43c06",
+                    "createdAt": "2026-02-27T22:39:39.524000+05:30",
+                    "message": "(service doc-healing-api-service) failed to launch a task with (error ECS was unable to assume the role 'arn:aws:iam::122610498241:role/ecsTaskRole' that was provided for this task. Please verify that the role being passed has the proper trust relationship and permissions and that your IAM user has permissions to pass this role.)."
+                }
+            ],
+            "createdAt": "2026-02-27T22:39:07.973000+05:30",
+            "currentServiceDeployment": "arn:aws:ecs:ap-south-1:122610498241:service-deployment/doc-healing-cluster/doc-healing-api-service/3cW3Cqnl3rJnJf3qH688Y",
+            "currentServiceRevisions": [
+                {
+                    "arn": "arn:aws:ecs:ap-south-1:122610498241:service-revision/doc-healing-cluster/doc-healing-api-service/3991561894773381199",
+                    "requestedTaskCount": 1,
+                    "runningTaskCount": 0,
+                    "pendingTaskCount": 0
+                },
+                {
+                    "arn": "arn:aws:ecs:ap-south-1:122610498241:service-revision/doc-healing-cluster/doc-healing-api-service/9021651060063184947",
+                    "requestedTaskCount": 0,
+                    "runningTaskCount": 0,
+                    "pendingTaskCount": 0
+                }
+            ],
+            "placementConstraints": [],
+            "placementStrategy": [],
+            "networkConfiguration": {
+                "awsvpcConfiguration": {
+                    "subnets": [
+                        "subnet-01026b3046fafc6f1",
+                        "subnet-03f527b3f57d450b7"
+                    ],
+                    "securityGroups": [
+                        "sg-0ed4656c2242bc381"
+                    ],
+                    "assignPublicIp": "ENABLED"
+                }
+            },
+            "healthCheckGracePeriodSeconds": 0,
+            "schedulingStrategy": "REPLICA",
+            "deploymentController": {
+                "type": "ECS"
+            },
+            "createdBy": "arn:aws:iam::122610498241:user/github-actions-deployer",
+            "enableECSManagedTags": false,
+            "propagateTags": "NONE",
+            "enableExecuteCommand": false,
+            "availabilityZoneRebalancing": "ENABLED",
+            "resourceManagementType": "CUSTOMER"
+        }
+    ],
+    "failures": []
+}

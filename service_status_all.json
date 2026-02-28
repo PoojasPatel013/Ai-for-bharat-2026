@@ -1,0 +1,335 @@
+{
+    "services": [
+        {
+            "serviceArn": "arn:aws:ecs:ap-south-1:122610498241:service/doc-healing-cluster/doc-healing-api-service",
+            "serviceName": "doc-healing-api-service",
+            "clusterArn": "arn:aws:ecs:ap-south-1:122610498241:cluster/doc-healing-cluster",
+            "loadBalancers": [],
+            "serviceRegistries": [],
+            "status": "ACTIVE",
+            "desiredCount": 1,
+            "runningCount": 0,
+            "pendingCount": 0,
+            "launchType": "FARGATE",
+            "platformVersion": "LATEST",
+            "platformFamily": "Linux",
+            "taskDefinition": "arn:aws:ecs:ap-south-1:122610498241:task-definition/doc-healing-api:4",
+            "deploymentConfiguration": {
+                "deploymentCircuitBreaker": {
+                    "enable": false,
+                    "rollback": false
+                },
+                "maximumPercent": 200,
+                "minimumHealthyPercent": 100,
+                "strategy": "ROLLING",
+                "bakeTimeInMinutes": 0
+            },
+            "deployments": [
+                {
+                    "id": "ecs-svc/9243676802125083394",
+                    "status": "PRIMARY",
+                    "taskDefinition": "arn:aws:ecs:ap-south-1:122610498241:task-definition/doc-healing-api:4",
+                    "desiredCount": 1,
+                    "pendingCount": 0,
+                    "runningCount": 0,
+                    "failedTasks": 1,
+                    "createdAt": "2026-02-28T11:26:15.640000+05:30",
+                    "updatedAt": "2026-02-28T11:26:37.667000+05:30",
+                    "launchType": "FARGATE",
+                    "platformVersion": "1.4.0",
+                    "platformFamily": "Linux",
+                    "networkConfiguration": {
+                        "awsvpcConfiguration": {
+                            "subnets": [
+                                "subnet-01026b3046fafc6f1",
+                                "subnet-03f527b3f57d450b7"
+                            ],
+                            "securityGroups": [
+                                "sg-0ed4656c2242bc381"
+                            ],
+                            "assignPublicIp": "ENABLED"
+                        }
+                    },
+                    "rolloutState": "IN_PROGRESS",
+                    "rolloutStateReason": "ECS deployment ecs-svc/9243676802125083394 in progress."
+                },
+                {
+                    "id": "ecs-svc/3991561894773381199",
+                    "status": "ACTIVE",
+                    "taskDefinition": "arn:aws:ecs:ap-south-1:122610498241:task-definition/doc-healing-api:3",
+                    "desiredCount": 1,
+                    "pendingCount": 0,
+                    "runningCount": 0,
+                    "failedTasks": 2,
+                    "createdAt": "2026-02-28T10:43:57.187000+05:30",
+                    "updatedAt": "2026-02-28T11:26:28.134000+05:30",
+                    "launchType": "FARGATE",
+                    "platformVersion": "1.4.0",
+                    "platformFamily": "Linux",
+                    "networkConfiguration": {
+                        "awsvpcConfiguration": {
+                            "subnets": [
+                                "subnet-01026b3046fafc6f1",
+                                "subnet-03f527b3f57d450b7"
+                            ],
+                            "securityGroups": [
+                                "sg-0ed4656c2242bc381"
+                            ],
+                            "assignPublicIp": "ENABLED"
+                        }
+                    },
+                    "rolloutState": "IN_PROGRESS",
+                    "rolloutStateReason": "ECS deployment ecs-svc/3991561894773381199 in progress."
+                }
+            ],
+            "roleArn": "arn:aws:iam::122610498241:role/aws-service-role/ecs.amazonaws.com/AWSServiceRoleForECS",
+            "events": [
+                {
+                    "id": "e9abe98d-7eda-4ebc-9420-742e4a1751f7",
+                    "createdAt": "2026-02-28T11:28:15.388000+05:30",
+                    "message": "(service doc-healing-api-service) was unable to place a task. Reason: ResourceInitializationError: failed to validate logger args: create stream has been retried 1 times: failed to create Cloudwatch log group: operation error CloudWatch Logs: CreateLogGroup, https response error StatusCode: 400, RequestID: 0cc7763f-e980-47fc-b83f-6f94932fb5b5, api error AccessDeniedException: User: arn:aws:sts::122610498241:assumed-role/ecsTaskExecutionRole/4979426044ae489cb3e750d9c63070c8 is not authorized to perform: logs:CreateLogGroup on resource: arn:aws:logs:ap-south-1:122610498241:log-group:/ecs/doc-healing-api:log-stream: because no identity-based policy allows the logs:CreateLogGroup action : exit status 1."
+                },
+                {
+                    "id": "1f55b002-7ad0-41d2-b994-7b5a7cd59589",
+                    "createdAt": "2026-02-28T11:27:53.487000+05:30",
+                    "message": "(service doc-healing-api-service) has started 1 tasks: (task 4979426044ae489cb3e750d9c63070c8)."
+                },
+                {
+                    "id": "f1084ce0-b192-42a7-ad84-1fcedcef5be3",
+                    "createdAt": "2026-02-28T11:27:53.093000+05:30",
+                    "message": "(service doc-healing-api-service) has started 1 tasks: (task 3a3e20729b24444fa548e8ad42338426)."
+                },
+                {
+                    "id": "09bb19cd-2d4f-4031-93dd-ac55c2a54577",
+                    "createdAt": "2026-02-28T11:27:19.039000+05:30",
+                    "message": "(service doc-healing-api-service) was unable to place a task. Reason: ResourceInitializationError: failed to validate logger args: create stream has been retried 1 times: failed to create Cloudwatch log group: operation error CloudWatch Logs: CreateLogGroup, https response error StatusCode: 400, RequestID: 95b46acc-17c5-47d1-9458-6b2d7eb930b1, api error AccessDeniedException: User: arn:aws:sts::122610498241:assumed-role/ecsTaskExecutionRole/f48b12c7c8f5400dacf8f2f7053cadd1 is not authorized to perform: logs:CreateLogGroup on resource: arn:aws:logs:ap-south-1:122610498241:log-group:/ecs/doc-healing-api:log-stream: because no identity-based policy allows the logs:CreateLogGroup action : exit status 1."
+                },
+                {
+                    "id": "190169f6-00d7-4122-ac10-6e91f5bee65e",
+                    "createdAt": "2026-02-28T11:27:09.156000+05:30",
+                    "message": "(service doc-healing-api-service) was unable to place a task. Reason: ResourceInitializationError: failed to validate logger args: create stream has been retried 1 times: failed to create Cloudwatch log group: operation error CloudWatch Logs: CreateLogGroup, https response error StatusCode: 400, RequestID: 0bae15b3-416a-4866-a019-48018d3a41c9, api error AccessDeniedException: User: arn:aws:sts::122610498241:assumed-role/ecsTaskExecutionRole/015585748fa34f0fa0fe397930765710 is not authorized to perform: logs:CreateLogGroup on resource: arn:aws:logs:ap-south-1:122610498241:log-group:/ecs/doc-healing-api:log-stream: because no identity-based policy allows the logs:CreateLogGroup action : exit status 1."
+                },
+                {
+                    "id": "1cfab818-4b21-43fd-9f78-36fa64a70f0c",
+                    "createdAt": "2026-02-28T11:26:59.200000+05:30",
+                    "message": "(service doc-healing-api-service) has started 1 tasks: (task f48b12c7c8f5400dacf8f2f7053cadd1)."
+                },
+                {
+                    "id": "02f31b39-1cc8-4ca0-877a-a513a1432a50",
+                    "createdAt": "2026-02-28T11:26:48.126000+05:30",
+                    "message": "(service doc-healing-api-service) was unable to place a task. Reason: ResourceInitializationError: failed to validate logger args: create stream has been retried 1 times: failed to create Cloudwatch log group: operation error CloudWatch Logs: CreateLogGroup, https response error StatusCode: 400, RequestID: 8909d205-37d1-405a-bef6-a15b665efc71, api error AccessDeniedException: User: arn:aws:sts::122610498241:assumed-role/ecsTaskExecutionRole/e420b22269644aaba84f3f098992b41d is not authorized to perform: logs:CreateLogGroup on resource: arn:aws:logs:ap-south-1:122610498241:log-group:/ecs/doc-healing-api:log-stream: because no identity-based policy allows the logs:CreateLogGroup action : exit status 1."
+                },
+                {
+                    "id": "7b82f17f-760f-4a6c-9384-7da4601e8d79",
+                    "createdAt": "2026-02-28T11:26:38.251000+05:30",
+                    "message": "(service doc-healing-api-service) has started 1 tasks: (task 015585748fa34f0fa0fe397930765710)."
+                },
+                {
+                    "id": "6100c1c4-f60d-4837-8b23-98e731c48481",
+                    "createdAt": "2026-02-28T11:26:17.376000+05:30",
+                    "message": "(service doc-healing-api-service) has started 1 tasks: (task e420b22269644aaba84f3f098992b41d)."
+                },
+                {
+                    "id": "8ffe70ef-a094-44f0-9067-85236dde7487",
+                    "createdAt": "2026-02-28T11:25:27.974000+05:30",
+                    "message": "(service doc-healing-api-service) was unable to place a task. Reason: ResourceInitializationError: failed to validate logger args: create stream has been retried 1 times: failed to create Cloudwatch log group: operation error CloudWatch Logs: CreateLogGroup, https response error StatusCode: 400, RequestID: f7d6262a-43ef-466b-b1b5-8c716f2f8fca, api error AccessDeniedException: User: arn:aws:sts::122610498241:assumed-role/ecsTaskExecutionRole/de09c126deae4d78900cd4272ba51a2f is not authorized to perform: logs:CreateLogGroup on resource: arn:aws:logs:ap-south-1:122610498241:log-group:/ecs/doc-healing-api:log-stream: because no identity-based policy allows the logs:CreateLogGroup action : exit status 1."
+                },
+                {
+                    "id": "f49a7ee8-dc14-42a9-80a8-919cd771c3aa",
+                    "createdAt": "2026-02-28T11:24:55.898000+05:30",
+                    "message": "(service doc-healing-api-service) has started 1 tasks: (task de09c126deae4d78900cd4272ba51a2f)."
+                },
+                {
+                    "id": "42c69adc-e273-4198-b269-94438e639e05",
+                    "createdAt": "2026-02-28T11:24:23.631000+05:30",
+                    "message": "(service doc-healing-api-service) was unable to place a task. Reason: ResourceInitializationError: failed to validate logger args: create stream has been retried 1 times: failed to create Cloudwatch log group: operation error CloudWatch Logs: CreateLogGroup, https response error StatusCode: 400, RequestID: 2d6ca1d7-680b-4851-be7c-d2ea8a3fb5e7, api error AccessDeniedException: User: arn:aws:sts::122610498241:assumed-role/ecsTaskExecutionRole/a4ad280b110c4b3089390cc665f58936 is not authorized to perform: logs:CreateLogGroup on resource: arn:aws:logs:ap-south-1:122610498241:log-group:/ecs/doc-healing-api:log-stream: because no identity-based policy allows the logs:CreateLogGroup action : exit status 1."
+                },
+                {
+                    "id": "bec7ea2a-c8b9-470a-87c3-fe016e4466de",
+                    "createdAt": "2026-02-28T11:24:02.544000+05:30",
+                    "message": "(service doc-healing-api-service) has started 1 tasks: (task a4ad280b110c4b3089390cc665f58936)."
+                },
+                {
+                    "id": "636f3d31-ca19-4ea4-8f4a-3358005f5c50",
+                    "createdAt": "2026-02-28T11:23:30.893000+05:30",
+                    "message": "(service doc-healing-api-service) was unable to place a task. Reason: ResourceInitializationError: failed to validate logger args: create stream has been retried 1 times: failed to create Cloudwatch log group: operation error CloudWatch Logs: CreateLogGroup, https response error StatusCode: 400, RequestID: 865e17d2-b4bb-437d-91ac-b69fbc160c57, api error AccessDeniedException: User: arn:aws:sts::122610498241:assumed-role/ecsTaskExecutionRole/2b55406168bb4772b286fcf4d66a4283 is not authorized to perform: logs:CreateLogGroup on resource: arn:aws:logs:ap-south-1:122610498241:log-group:/ecs/doc-healing-api:log-stream: because no identity-based policy allows the logs:CreateLogGroup action : exit status 1."
+                },
+                {
+                    "id": "b2ab6115-c6f0-4a1c-ac14-a8598917c8d8",
+                    "createdAt": "2026-02-28T11:22:57.637000+05:30",
+                    "message": "(service doc-healing-api-service) has started 1 tasks: (task 2b55406168bb4772b286fcf4d66a4283)."
+                },
+                {
+                    "id": "d660d8f4-54e8-40e5-b2a5-79d2ec6b3b5d",
+                    "createdAt": "2026-02-28T10:47:15.685000+05:30",
+                    "message": "(service doc-healing-api-service) failed to launch a task with (error ECS was unable to assume the role 'arn:aws:iam::122610498241:role/ecsTaskRole' that was provided for this task. Please verify that the role being passed has the proper trust relationship and permissions and that your IAM user has permissions to pass this role.)."
+                },
+                {
+                    "id": "1418c021-e148-47cf-bd02-4068d16f0f60",
+                    "createdAt": "2026-02-28T04:47:13.875000+05:30",
+                    "message": "(service doc-healing-api-service) failed to launch a task with (error ECS was unable to assume the role 'arn:aws:iam::122610498241:role/ecsTaskRole' that was provided for this task. Please verify that the role being passed has the proper trust relationship and permissions and that your IAM user has permissions to pass this role.)."
+                },
+                {
+                    "id": "3a104c7d-c4d7-4aee-ae8d-1454edf43c06",
+                    "createdAt": "2026-02-27T22:39:39.524000+05:30",
+                    "message": "(service doc-healing-api-service) failed to launch a task with (error ECS was unable to assume the role 'arn:aws:iam::122610498241:role/ecsTaskRole' that was provided for this task. Please verify that the role being passed has the proper trust relationship and permissions and that your IAM user has permissions to pass this role.)."
+                }
+            ],
+            "createdAt": "2026-02-27T22:39:07.973000+05:30",
+            "currentServiceDeployment": "arn:aws:ecs:ap-south-1:122610498241:service-deployment/doc-healing-cluster/doc-healing-api-service/Al8cZaPfpgzYdMFcepelp",
+            "currentServiceRevisions": [
+                {
+                    "arn": "arn:aws:ecs:ap-south-1:122610498241:service-revision/doc-healing-cluster/doc-healing-api-service/9243676802125083394",
+                    "requestedTaskCount": 1,
+                    "runningTaskCount": 0,
+                    "pendingTaskCount": 0
+                },
+                {
+                    "arn": "arn:aws:ecs:ap-south-1:122610498241:service-revision/doc-healing-cluster/doc-healing-api-service/3991561894773381199",
+                    "requestedTaskCount": 1,
+                    "runningTaskCount": 0,
+                    "pendingTaskCount": 0
+                }
+            ],
+            "placementConstraints": [],
+            "placementStrategy": [],
+            "networkConfiguration": {
+                "awsvpcConfiguration": {
+                    "subnets": [
+                        "subnet-01026b3046fafc6f1",
+                        "subnet-03f527b3f57d450b7"
+                    ],
+                    "securityGroups": [
+                        "sg-0ed4656c2242bc381"
+                    ],
+                    "assignPublicIp": "ENABLED"
+                }
+            },
+            "healthCheckGracePeriodSeconds": 0,
+            "schedulingStrategy": "REPLICA",
+            "deploymentController": {
+                "type": "ECS"
+            },
+            "createdBy": "arn:aws:iam::122610498241:user/github-actions-deployer",
+            "enableECSManagedTags": false,
+            "propagateTags": "NONE",
+            "enableExecuteCommand": false,
+            "availabilityZoneRebalancing": "ENABLED",
+            "resourceManagementType": "CUSTOMER"
+        },
+        {
+            "serviceArn": "arn:aws:ecs:ap-south-1:122610498241:service/doc-healing-cluster/doc-healing-worker-service",
+            "serviceName": "doc-healing-worker-service",
+            "clusterArn": "arn:aws:ecs:ap-south-1:122610498241:cluster/doc-healing-cluster",
+            "loadBalancers": [],
+            "serviceRegistries": [],
+            "status": "ACTIVE",
+            "desiredCount": 1,
+            "runningCount": 0,
+            "pendingCount": 0,
+            "launchType": "FARGATE",
+            "platformVersion": "LATEST",
+            "platformFamily": "Linux",
+            "taskDefinition": "arn:aws:ecs:ap-south-1:122610498241:task-definition/doc-healing-worker:1",
+            "deploymentConfiguration": {
+                "deploymentCircuitBreaker": {
+                    "enable": false,
+                    "rollback": false
+                },
+                "maximumPercent": 200,
+                "minimumHealthyPercent": 100,
+                "strategy": "ROLLING",
+                "bakeTimeInMinutes": 0
+            },
+            "deployments": [
+                {
+                    "id": "ecs-svc/1435125465741338177",
+                    "status": "PRIMARY",
+                    "taskDefinition": "arn:aws:ecs:ap-south-1:122610498241:task-definition/doc-healing-worker:1",
+                    "desiredCount": 1,
+                    "pendingCount": 0,
+                    "runningCount": 0,
+                    "failedTasks": 0,
+                    "createdAt": "2026-02-27T22:41:04.157000+05:30",
+                    "updatedAt": "2026-02-28T05:41:23.511000+05:30",
+                    "launchType": "FARGATE",
+                    "platformVersion": "1.4.0",
+                    "platformFamily": "Linux",
+                    "networkConfiguration": {
+                        "awsvpcConfiguration": {
+                            "subnets": [
+                                "subnet-01026b3046fafc6f1",
+                                "subnet-03f527b3f57d450b7"
+                            ],
+                            "securityGroups": [
+                                "sg-0ed4656c2242bc381"
+                            ],
+                            "assignPublicIp": "ENABLED"
+                        }
+                    },
+                    "rolloutState": "IN_PROGRESS",
+                    "rolloutStateReason": "ECS deployment ecs-svc/1435125465741338177 in progress."
+                }
+            ],
+            "roleArn": "arn:aws:iam::122610498241:role/aws-service-role/ecs.amazonaws.com/AWSServiceRoleForECS",
+            "events": [
+                {
+                    "id": "d7f2520b-a574-4ab4-a4ca-8e8c253647bb",
+                    "createdAt": "2026-02-28T11:27:51.795000+05:30",
+                    "message": "(service doc-healing-worker-service) has started 1 tasks: (task 12cc744726994c20ba3777f5e4e0f340)."
+                },
+                {
+                    "id": "f29d64c8-b0b9-4402-a6e7-c86cf397721d",
+                    "createdAt": "2026-02-28T10:47:08.428000+05:30",
+                    "message": "(service doc-healing-worker-service) failed to launch a task with (error ECS was unable to assume the role 'arn:aws:iam::122610498241:role/ecsTaskRole' that was provided for this task. Please verify that the role being passed has the proper trust relationship and permissions and that your IAM user has permissions to pass this role.)."
+                },
+                {
+                    "id": "130d60c5-8214-4ef1-8c4f-571463ebe83e",
+                    "createdAt": "2026-02-28T04:42:27.960000+05:30",
+                    "message": "(service doc-healing-worker-service) failed to launch a task with (error ECS was unable to assume the role 'arn:aws:iam::122610498241:role/ecsTaskRole' that was provided for this task. Please verify that the role being passed has the proper trust relationship and permissions and that your IAM user has permissions to pass this role.)."
+                },
+                {
+                    "id": "76f3e972-e8ae-4e63-b64a-9ecf73975ab8",
+                    "createdAt": "2026-02-27T22:41:32.990000+05:30",
+                    "message": "(service doc-healing-worker-service) failed to launch a task with (error ECS was unable to assume the role 'arn:aws:iam::122610498241:role/ecsTaskRole' that was provided for this task. Please verify that the role being passed has the proper trust relationship and permissions and that your IAM user has permissions to pass this role.)."
+                }
+            ],
+            "createdAt": "2026-02-27T22:41:04.157000+05:30",
+            "currentServiceDeployment": "arn:aws:ecs:ap-south-1:122610498241:service-deployment/doc-healing-cluster/doc-healing-worker-service/2_LlTrkTmvE30LXoJSOn3",
+            "currentServiceRevisions": [
+                {
+                    "arn": "arn:aws:ecs:ap-south-1:122610498241:service-revision/doc-healing-cluster/doc-healing-worker-service/1435125465741338177",
+                    "requestedTaskCount": 1,
+                    "runningTaskCount": 0,
+                    "pendingTaskCount": 0
+                }
+            ],
+            "placementConstraints": [],
+            "placementStrategy": [],
+            "networkConfiguration": {
+                "awsvpcConfiguration": {
+                    "subnets": [
+                        "subnet-01026b3046fafc6f1",
+                        "subnet-03f527b3f57d450b7"
+                    ],
+                    "securityGroups": [
+                        "sg-0ed4656c2242bc381"
+                    ],
+                    "assignPublicIp": "ENABLED"
+                }
+            },
+            "healthCheckGracePeriodSeconds": 0,
+            "schedulingStrategy": "REPLICA",
+            "deploymentController": {
+                "type": "ECS"
+            },
+            "createdBy": "arn:aws:iam::122610498241:user/github-actions-deployer",
+            "enableECSManagedTags": false,
+            "propagateTags": "NONE",
+            "enableExecuteCommand": false,
+            "availabilityZoneRebalancing": "ENABLED",
+            "resourceManagementType": "CUSTOMER"
+        }
+    ],
+    "failures": []
+}
