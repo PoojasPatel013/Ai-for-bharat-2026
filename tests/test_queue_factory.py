@@ -154,6 +154,7 @@ def test_factory_with_redis_backend_configuration():
             settings.redis_host = "redis.example.com"
             settings.redis_port = 6380
             settings.redis_db = 1
+            settings.redis_url = None
             mock_factory_settings.return_value = settings
             mock_redis_settings.return_value = settings
             
