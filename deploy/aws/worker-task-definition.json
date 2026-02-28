@@ -13,8 +13,8 @@
             "name": "doc-healing-app",
             "image": "122610498241.dkr.ecr.ap-south-1.amazonaws.com/doc-healing-engine:latest",
             "command": [
-                "rq",
-                "worker",
+                "python",
+                "/app/scripts/run_rq_worker.py",
                 "webhooks",
                 "validation",
                 "healing"
