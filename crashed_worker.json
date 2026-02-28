@@ -1,0 +1,105 @@
+{
+    "tasks": [
+        {
+            "attachments": [
+                {
+                    "id": "26770590-caed-4b08-bad2-ed661f561602",
+                    "type": "ElasticNetworkInterface",
+                    "status": "DELETED",
+                    "details": [
+                        {
+                            "name": "subnetId",
+                            "value": "subnet-03f527b3f57d450b7"
+                        },
+                        {
+                            "name": "networkInterfaceId",
+                            "value": "eni-0f1b18d84e64501fd"
+                        },
+                        {
+                            "name": "macAddress",
+                            "value": "02:9d:b0:37:4d:81"
+                        },
+                        {
+                            "name": "privateDnsName",
+                            "value": "ip-172-31-37-19.ap-south-1.compute.internal"
+                        },
+                        {
+                            "name": "privateIPv4Address",
+                            "value": "172.31.37.19"
+                        }
+                    ]
+                }
+            ],
+            "attributes": [
+                {
+                    "name": "ecs.cpu-architecture",
+                    "value": "x86_64"
+                }
+            ],
+            "availabilityZone": "ap-south-1a",
+            "clusterArn": "arn:aws:ecs:ap-south-1:122610498241:cluster/doc-healing-cluster",
+            "connectivity": "CONNECTED",
+            "connectivityAt": "2026-02-28T11:47:29.503000+05:30",
+            "containers": [
+                {
+                    "containerArn": "arn:aws:ecs:ap-south-1:122610498241:container/doc-healing-cluster/141191da7b804965a12974100bb0b6cb/a0f8cebb-7b62-41e3-9c10-a46be1ea8569",
+                    "taskArn": "arn:aws:ecs:ap-south-1:122610498241:task/doc-healing-cluster/141191da7b804965a12974100bb0b6cb",
+                    "name": "doc-healing-app",
+                    "image": "122610498241.dkr.ecr.ap-south-1.amazonaws.com/doc-healing-engine:e2c301c4ad709124583e37a10bec76d5116b2e17",
+                    "imageDigest": "sha256:29a41b844ba3e47dc24a078cd0f6546d0cdb944a79b7ea88c7adda098f122cb4",
+                    "runtimeId": "141191da7b804965a12974100bb0b6cb-1625409176",
+                    "lastStatus": "STOPPED",
+                    "exitCode": 1,
+                    "networkBindings": [],
+                    "networkInterfaces": [
+                        {
+                            "attachmentId": "26770590-caed-4b08-bad2-ed661f561602",
+                            "privateIpv4Address": "172.31.37.19"
+                        }
+                    ],
+                    "healthStatus": "UNKNOWN",
+                    "cpu": "0"
+                }
+            ],
+            "cpu": "2048",
+            "createdAt": "2026-02-28T11:47:26.068000+05:30",
+            "desiredStatus": "STOPPED",
+            "enableExecuteCommand": false,
+            "executionStoppedAt": "2026-02-28T11:47:55.767000+05:30",
+            "group": "service:doc-healing-worker-service",
+            "healthStatus": "UNKNOWN",
+            "lastStatus": "STOPPED",
+            "launchType": "FARGATE",
+            "memory": "4096",
+            "overrides": {
+                "containerOverrides": [
+                    {
+                        "name": "doc-healing-app"
+                    }
+                ],
+                "inferenceAcceleratorOverrides": []
+            },
+            "platformVersion": "1.4.0",
+            "platformFamily": "Linux",
+            "pullStartedAt": "2026-02-28T11:47:36.333000+05:30",
+            "pullStoppedAt": "2026-02-28T11:47:50.485000+05:30",
+            "startedAt": "2026-02-28T11:47:55.381000+05:30",
+            "startedBy": "ecs-svc/1318841571635760607",
+            "stopCode": "EssentialContainerExited",
+            "stoppedAt": "2026-02-28T11:48:19.222000+05:30",
+            "stoppedReason": "Essential container in task exited",
+            "stoppingAt": "2026-02-28T11:48:05.795000+05:30",
+            "tags": [],
+            "taskArn": "arn:aws:ecs:ap-south-1:122610498241:task/doc-healing-cluster/141191da7b804965a12974100bb0b6cb",
+            "taskDefinitionArn": "arn:aws:ecs:ap-south-1:122610498241:task-definition/doc-healing-worker:2",
+            "version": 5,
+            "ephemeralStorage": {
+                "sizeInGiB": 20
+            },
+            "fargateEphemeralStorage": {
+                "sizeInGiB": 20
+            }
+        }
+    ],
+    "failures": []
+}

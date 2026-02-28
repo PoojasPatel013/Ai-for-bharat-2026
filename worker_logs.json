@@ -1,0 +1,51 @@
+{
+    "events": [
+        {
+            "timestamp": 1772259475725,
+            "message": "/usr/local/lib/python3.11/site-packages/click/core.py:1223: UserWarning: The parameter --serializer is used more than once. Remove its duplicate as parameters should be unique.",
+            "ingestionTime": 1772259480327
+        },
+        {
+            "timestamp": 1772259475725,
+            "message": "  parser = self.make_parser(ctx)",
+            "ingestionTime": 1772259480327
+        },
+        {
+            "timestamp": 1772259475725,
+            "message": "/usr/local/lib/python3.11/site-packages/click/core.py:1223: UserWarning: The parameter -S is used more than once. Remove its duplicate as parameters should be unique.",
+            "ingestionTime": 1772259480327
+        },
+        {
+            "timestamp": 1772259475725,
+            "message": "  parser = self.make_parser(ctx)",
+            "ingestionTime": 1772259480327
+        },
+        {
+            "timestamp": 1772259475725,
+            "message": "/usr/local/lib/python3.11/site-packages/click/core.py:1216: UserWarning: The parameter --serializer is used more than once. Remove its duplicate as parameters should be unique.",
+            "ingestionTime": 1772259480327
+        },
+        {
+            "timestamp": 1772259475725,
+            "message": "  self.parse_args(ctx, args)",
+            "ingestionTime": 1772259480327
+        },
+        {
+            "timestamp": 1772259475725,
+            "message": "/usr/local/lib/python3.11/site-packages/click/core.py:1216: UserWarning: The parameter -S is used more than once. Remove its duplicate as parameters should be unique.",
+            "ingestionTime": 1772259480327
+        },
+        {
+            "timestamp": 1772259475725,
+            "message": "  self.parse_args(ctx, args)",
+            "ingestionTime": 1772259480327
+        },
+        {
+            "timestamp": 1772259475727,
+            "message": "ERROR:root:Error 111 connecting to localhost:6379. Connection refused.",
+            "ingestionTime": 1772259480327
+        }
+    ],
+    "nextForwardToken": "f/39522706993869294701715236028352485688550963261352312840/s",
+    "nextBackwardToken": "b/39522706993824693211318174782069414252005666538340352000/s"
+}

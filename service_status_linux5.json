@@ -1,0 +1,342 @@
+{
+    "services": [
+        {
+            "serviceArn": "arn:aws:ecs:ap-south-1:122610498241:service/doc-healing-cluster/doc-healing-worker-service",
+            "serviceName": "doc-healing-worker-service",
+            "clusterArn": "arn:aws:ecs:ap-south-1:122610498241:cluster/doc-healing-cluster",
+            "loadBalancers": [],
+            "serviceRegistries": [],
+            "status": "ACTIVE",
+            "desiredCount": 1,
+            "runningCount": 1,
+            "pendingCount": 1,
+            "launchType": "FARGATE",
+            "platformVersion": "LATEST",
+            "platformFamily": "Linux",
+            "taskDefinition": "arn:aws:ecs:ap-south-1:122610498241:task-definition/doc-healing-worker:2",
+            "deploymentConfiguration": {
+                "deploymentCircuitBreaker": {
+                    "enable": false,
+                    "rollback": false
+                },
+                "maximumPercent": 200,
+                "minimumHealthyPercent": 100,
+                "strategy": "ROLLING",
+                "bakeTimeInMinutes": 0
+            },
+            "deployments": [
+                {
+                    "id": "ecs-svc/1318841571635760607",
+                    "status": "PRIMARY",
+                    "taskDefinition": "arn:aws:ecs:ap-south-1:122610498241:task-definition/doc-healing-worker:2",
+                    "desiredCount": 1,
+                    "pendingCount": 1,
+                    "runningCount": 0,
+                    "failedTasks": 35,
+                    "createdAt": "2026-02-28T11:40:00.381000+05:30",
+                    "updatedAt": "2026-02-28T12:14:26.771000+05:30",
+                    "launchType": "FARGATE",
+                    "platformVersion": "1.4.0",
+                    "platformFamily": "Linux",
+                    "networkConfiguration": {
+                        "awsvpcConfiguration": {
+                            "subnets": [
+                                "subnet-01026b3046fafc6f1",
+                                "subnet-03f527b3f57d450b7"
+                            ],
+                            "securityGroups": [
+                                "sg-0ed4656c2242bc381"
+                            ],
+                            "assignPublicIp": "ENABLED"
+                        }
+                    },
+                    "rolloutState": "IN_PROGRESS",
+                    "rolloutStateReason": "ECS deployment ecs-svc/1318841571635760607 in progress."
+                },
+                {
+                    "id": "ecs-svc/1435125465741338177",
+                    "status": "ACTIVE",
+                    "taskDefinition": "arn:aws:ecs:ap-south-1:122610498241:task-definition/doc-healing-worker:1",
+                    "desiredCount": 0,
+                    "pendingCount": 0,
+                    "runningCount": 1,
+                    "failedTasks": 0,
+                    "createdAt": "2026-02-27T22:41:04.157000+05:30",
+                    "updatedAt": "2026-02-28T11:41:31.946000+05:30",
+                    "launchType": "FARGATE",
+                    "platformVersion": "1.4.0",
+                    "platformFamily": "Linux",
+                    "networkConfiguration": {
+                        "awsvpcConfiguration": {
+                            "subnets": [
+                                "subnet-01026b3046fafc6f1",
+                                "subnet-03f527b3f57d450b7"
+                            ],
+                            "securityGroups": [
+                                "sg-0ed4656c2242bc381"
+                            ],
+                            "assignPublicIp": "ENABLED"
+                        }
+                    },
+                    "rolloutState": "IN_PROGRESS",
+                    "rolloutStateReason": "ECS deployment ecs-svc/1435125465741338177 in progress."
+                }
+            ],
+            "roleArn": "arn:aws:iam::122610498241:role/aws-service-role/ecs.amazonaws.com/AWSServiceRoleForECS",
+            "events": [
+                {
+                    "id": "f129c10c-9d54-4aa5-b490-9d0eda545a75",
+                    "createdAt": "2026-02-28T12:14:36.848000+05:30",
+                    "message": "(service doc-healing-worker-service) has started 1 tasks: (task 23308c94d969400a80a9506a0a8b08bb)."
+                },
+                {
+                    "id": "e83cc0f6-a4a4-4e14-a543-a98031a0e3c3",
+                    "createdAt": "2026-02-28T12:13:35.206000+05:30",
+                    "message": "(service doc-healing-worker-service) has started 1 tasks: (task 4910ab3f81b94b6789f263fbb3edd8df)."
+                },
+                {
+                    "id": "67af3953-974a-4eea-bb56-593e86ab68c5",
+                    "createdAt": "2026-02-28T12:12:42.208000+05:30",
+                    "message": "(service doc-healing-worker-service) has started 1 tasks: (task c3624f65d16047989ca7d5ea35908ee6)."
+                },
+                {
+                    "id": "d00ab71d-f71f-4fa7-b6de-da0166ab3ce5",
+                    "createdAt": "2026-02-28T12:11:51.347000+05:30",
+                    "message": "(service doc-healing-worker-service) has started 1 tasks: (task d70ed503799546d1840f4cca3df10d97)."
+                },
+                {
+                    "id": "d2835ea5-b808-4483-92db-51f69ed77d06",
+                    "createdAt": "2026-02-28T12:10:48.889000+05:30",
+                    "message": "(service doc-healing-worker-service) has started 1 tasks: (task 5867627f34b049409298de3953879705)."
+                },
+                {
+                    "id": "afa7865b-7a23-41ac-aaa2-b51de984311c",
+                    "createdAt": "2026-02-28T12:09:46.551000+05:30",
+                    "message": "(service doc-healing-worker-service) has started 1 tasks: (task ee3e674e29cb47999a13c8b0af8402a3)."
+                },
+                {
+                    "id": "b955be43-6061-4c11-a16e-421b0a86fa97",
+                    "createdAt": "2026-02-28T12:08:54.653000+05:30",
+                    "message": "(service doc-healing-worker-service) has started 1 tasks: (task 5ab882561548425a950e87d2ff3342f4)."
+                },
+                {
+                    "id": "37adc0a5-308b-4474-84de-fd54350ad8b2",
+                    "createdAt": "2026-02-28T12:08:02.784000+05:30",
+                    "message": "(service doc-healing-worker-service) has started 1 tasks: (task 53700bf8e342412782e7f433ed7bc1a2)."
+                },
+                {
+                    "id": "f7b9cc62-4a8d-4b3a-be65-43cd2eb0dd56",
+                    "createdAt": "2026-02-28T12:06:59.668000+05:30",
+                    "message": "(service doc-healing-worker-service) has started 1 tasks: (task 6dd242c37fd54e1eb40c40e72413f35a)."
+                },
+                {
+                    "id": "4cb6af3d-d997-44de-bcd1-455058df8973",
+                    "createdAt": "2026-02-28T12:06:08.481000+05:30",
+                    "message": "(service doc-healing-worker-service) has started 1 tasks: (task 718e4e3fe4274fce99252136ff002b56)."
+                },
+                {
+                    "id": "c77f5676-91e2-4455-9ad0-0f6e2b57fae8",
+                    "createdAt": "2026-02-28T12:05:16.559000+05:30",
+                    "message": "(service doc-healing-worker-service) has started 1 tasks: (task 31760d836de24ae194e8915b8a3bb8c0)."
+                },
+                {
+                    "id": "6efd0291-140a-43b3-9839-3f819d0e94a1",
+                    "createdAt": "2026-02-28T12:04:23.343000+05:30",
+                    "message": "(service doc-healing-worker-service) has started 1 tasks: (task 14574f46de1a42fa98eefcc2c136352a)."
+                },
+                {
+                    "id": "962c2b75-4fee-4f7d-8b12-ee88d0af6e5b",
+                    "createdAt": "2026-02-28T12:03:32.537000+05:30",
+                    "message": "(service doc-healing-worker-service) has started 1 tasks: (task 52a6ebdc5cfd48e5b863067e23f02d7c)."
+                },
+                {
+                    "id": "e79d1e83-b549-4a4f-a137-69b5952a82d8",
+                    "createdAt": "2026-02-28T12:02:29.223000+05:30",
+                    "message": "(service doc-healing-worker-service) has started 1 tasks: (task 4611360c41204adbb518ed1a2348c30b)."
+                },
+                {
+                    "id": "26e14784-b13e-4dfa-a193-57fa41f72ece",
+                    "createdAt": "2026-02-28T12:01:37.368000+05:30",
+                    "message": "(service doc-healing-worker-service) has started 1 tasks: (task f6ba42dbdad54f2b951bba9f7164ee3b)."
+                },
+                {
+                    "id": "f0e4adc7-5048-4e4f-aabd-3cf9d9eb7975",
+                    "createdAt": "2026-02-28T12:00:46.430000+05:30",
+                    "message": "(service doc-healing-worker-service) has started 1 tasks: (task bf632fbe3d56404f804758b0b1b9c918)."
+                },
+                {
+                    "id": "cfd653da-e928-479b-aa64-d09ec3797138",
+                    "createdAt": "2026-02-28T11:59:43.119000+05:30",
+                    "message": "(service doc-healing-worker-service) has started 1 tasks: (task a88114a087344f49bcc4016f1071801b)."
+                },
+                {
+                    "id": "49be5f7f-2f98-45e6-a70a-716801406288",
+                    "createdAt": "2026-02-28T11:58:41.628000+05:30",
+                    "message": "(service doc-healing-worker-service) has started 1 tasks: (task 383550d14b2e4f11a3d2164c17c59d14)."
+                },
+                {
+                    "id": "42a2cda3-b0cc-4e72-a58a-856fd435a148",
+                    "createdAt": "2026-02-28T11:57:39.377000+05:30",
+                    "message": "(service doc-healing-worker-service) has started 1 tasks: (task 832492b27ac94107858e023f0963c778)."
+                },
+                {
+                    "id": "80dc74b7-6619-4c35-9d83-44e32ae80d7f",
+                    "createdAt": "2026-02-28T11:56:37.036000+05:30",
+                    "message": "(service doc-healing-worker-service) has started 1 tasks: (task c0f9956864db4381976c51024d915333)."
+                },
+                {
+                    "id": "26c2d2d9-e5ae-43fd-89ff-f98bc7e2b752",
+                    "createdAt": "2026-02-28T11:55:45.051000+05:30",
+                    "message": "(service doc-healing-worker-service) has started 1 tasks: (task 8349dd21da924c9584ca4f35f8ab6534)."
+                },
+                {
+                    "id": "e278eab5-0b5a-44d2-b689-7fbf9b229dc7",
+                    "createdAt": "2026-02-28T11:54:41.261000+05:30",
+                    "message": "(service doc-healing-worker-service) has started 1 tasks: (task 7ae8dc7fe746459c9f0d67f6e1f5c503)."
+                },
+                {
+                    "id": "fb1551fb-2f9f-45bf-b3a8-6fb6a5787c4a",
+                    "createdAt": "2026-02-28T11:53:40.334000+05:30",
+                    "message": "(service doc-healing-worker-service) has started 1 tasks: (task 834b4e4b309843f1ad5f2cab81a83aa0)."
+                },
+                {
+                    "id": "c97d0c78-9c13-4e30-b778-2f80b66d2a01",
+                    "createdAt": "2026-02-28T11:52:37.760000+05:30",
+                    "message": "(service doc-healing-worker-service) has started 1 tasks: (task 5c002cdf8cdc4972ba75e0d1ec636451)."
+                },
+                {
+                    "id": "8006cddc-5f14-4770-96d5-8a16eb35c35b",
+                    "createdAt": "2026-02-28T11:51:35.532000+05:30",
+                    "message": "(service doc-healing-worker-service) has started 1 tasks: (task bd97f890642e45199d8bd2924e1066f4)."
+                },
+                {
+                    "id": "524dfd75-da7d-41e8-b8cc-7d15f4046b6f",
+                    "createdAt": "2026-02-28T11:50:33.201000+05:30",
+                    "message": "(service doc-healing-worker-service) has started 1 tasks: (task fdf9f7b9d0ce4aa49160a76302f1d94d)."
+                },
+                {
+                    "id": "870f3aa6-0d11-4b25-833e-9723b3f16027",
+                    "createdAt": "2026-02-28T11:49:30.682000+05:30",
+                    "message": "(service doc-healing-worker-service) has started 1 tasks: (task 7eed76beb4cb4bd6aa50d7b4ab678c75)."
+                },
+                {
+                    "id": "6da9b6f2-a0fa-4d76-bbcb-d54b56508568",
+                    "createdAt": "2026-02-28T11:48:27.387000+05:30",
+                    "message": "(service doc-healing-worker-service) has started 1 tasks: (task 8ba2b1105b064429a3eeec9f4222b461)."
+                },
+                {
+                    "id": "474d098e-ceaf-4cfb-96d8-c7ee921b7a16",
+                    "createdAt": "2026-02-28T11:47:26.116000+05:30",
+                    "message": "(service doc-healing-worker-service) has started 1 tasks: (task 141191da7b804965a12974100bb0b6cb)."
+                },
+                {
+                    "id": "94b45269-3eb5-4d97-8672-b6a5000363a9",
+                    "createdAt": "2026-02-28T11:46:33.270000+05:30",
+                    "message": "(service doc-healing-worker-service) has started 1 tasks: (task 7af97fd99aaf42f9bc6f08867cf38991)."
+                },
+                {
+                    "id": "552af3d0-93fc-4c39-b7fa-6c16cda2824f",
+                    "createdAt": "2026-02-28T11:45:41.844000+05:30",
+                    "message": "(service doc-healing-worker-service) has started 1 tasks: (task 2723233ee24e46f891a8d594683fa397)."
+                },
+                {
+                    "id": "fc69e5d7-5a88-4799-a566-bb74b9182328",
+                    "createdAt": "2026-02-28T11:44:39.972000+05:30",
+                    "message": "(service doc-healing-worker-service) has started 1 tasks: (task 9a8827d026ef49df86afb872adb1752f)."
+                },
+                {
+                    "id": "4cd9c622-7cea-44ac-a9a2-26cd80e7d361",
+                    "createdAt": "2026-02-28T11:43:48.057000+05:30",
+                    "message": "(service doc-healing-worker-service) has started 1 tasks: (task 28a85e0596e7422489c73ab5e738c8fc)."
+                },
+                {
+                    "id": "1dbbe6e0-7993-4e25-83b9-4f92e07a8e28",
+                    "createdAt": "2026-02-28T11:42:55.340000+05:30",
+                    "message": "(service doc-healing-worker-service) has started 1 tasks: (task bc8551880fb2441c81efb1e2f9f6b601)."
+                },
+                {
+                    "id": "b74bb651-1370-41e7-9987-aaabb4972254",
+                    "createdAt": "2026-02-28T11:41:53.792000+05:30",
+                    "message": "(service doc-healing-worker-service) has started 1 tasks: (task c60db0353207402b88061d4498db4704)."
+                },
+                {
+                    "id": "94533c3b-18cb-4aef-887c-4e046451ce7f",
+                    "createdAt": "2026-02-28T11:41:01.803000+05:30",
+                    "message": "(service doc-healing-worker-service) has started 1 tasks: (task 7c28eb466fff4be2803a15b38dd10953)."
+                },
+                {
+                    "id": "7d200c8d-940b-4716-bf78-b209c1670174",
+                    "createdAt": "2026-02-28T11:40:40.364000+05:30",
+                    "message": "(service doc-healing-worker-service) has started 1 tasks: (task 7a9e516ceb474e2798834af959f141aa)."
+                },
+                {
+                    "id": "b01e10d5-cea9-45dc-9ac8-a5517420f790",
+                    "createdAt": "2026-02-28T11:40:09.352000+05:30",
+                    "message": "(service doc-healing-worker-service) was unable to place a task. Reason: ResourceInitializationError: failed to validate logger args: create stream has been retried 1 times: failed to create Cloudwatch log group: operation error CloudWatch Logs: CreateLogGroup, https response error StatusCode: 400, RequestID: 376aa72e-f0bc-44b2-b240-d2351aa3a85c, api error AccessDeniedException: User: arn:aws:sts::122610498241:assumed-role/ecsTaskExecutionRole/12cc744726994c20ba3777f5e4e0f340 is not authorized to perform: logs:CreateLogGroup on resource: arn:aws:logs:ap-south-1:122610498241:log-group:/ecs/doc-healing-worker:log-stream: because no identity-based policy allows the logs:CreateLogGroup action : exit status 1."
+                },
+                {
+                    "id": "d7f2520b-a574-4ab4-a4ca-8e8c253647bb",
+                    "createdAt": "2026-02-28T11:27:51.795000+05:30",
+                    "message": "(service doc-healing-worker-service) has started 1 tasks: (task 12cc744726994c20ba3777f5e4e0f340)."
+                },
+                {
+                    "id": "f29d64c8-b0b9-4402-a6e7-c86cf397721d",
+                    "createdAt": "2026-02-28T10:47:08.428000+05:30",
+                    "message": "(service doc-healing-worker-service) failed to launch a task with (error ECS was unable to assume the role 'arn:aws:iam::122610498241:role/ecsTaskRole' that was provided for this task. Please verify that the role being passed has the proper trust relationship and permissions and that your IAM user has permissions to pass this role.)."
+                },
+                {
+                    "id": "130d60c5-8214-4ef1-8c4f-571463ebe83e",
+                    "createdAt": "2026-02-28T04:42:27.960000+05:30",
+                    "message": "(service doc-healing-worker-service) failed to launch a task with (error ECS was unable to assume the role 'arn:aws:iam::122610498241:role/ecsTaskRole' that was provided for this task. Please verify that the role being passed has the proper trust relationship and permissions and that your IAM user has permissions to pass this role.)."
+                },
+                {
+                    "id": "76f3e972-e8ae-4e63-b64a-9ecf73975ab8",
+                    "createdAt": "2026-02-27T22:41:32.990000+05:30",
+                    "message": "(service doc-healing-worker-service) failed to launch a task with (error ECS was unable to assume the role 'arn:aws:iam::122610498241:role/ecsTaskRole' that was provided for this task. Please verify that the role being passed has the proper trust relationship and permissions and that your IAM user has permissions to pass this role.)."
+                }
+            ],
+            "createdAt": "2026-02-27T22:41:04.157000+05:30",
+            "currentServiceDeployment": "arn:aws:ecs:ap-south-1:122610498241:service-deployment/doc-healing-cluster/doc-healing-worker-service/nw7cPzl_-rwDLnFB9SUMq",
+            "currentServiceRevisions": [
+                {
+                    "arn": "arn:aws:ecs:ap-south-1:122610498241:service-revision/doc-healing-cluster/doc-healing-worker-service/1318841571635760607",
+                    "requestedTaskCount": 1,
+                    "runningTaskCount": 0,
+                    "pendingTaskCount": 1
+                },
+                {
+                    "arn": "arn:aws:ecs:ap-south-1:122610498241:service-revision/doc-healing-cluster/doc-healing-worker-service/1435125465741338177",
+                    "requestedTaskCount": 0,
+                    "runningTaskCount": 1,
+                    "pendingTaskCount": 0
+                }
+            ],
+            "placementConstraints": [],
+            "placementStrategy": [],
+            "networkConfiguration": {
+                "awsvpcConfiguration": {
+                    "subnets": [
+                        "subnet-01026b3046fafc6f1",
+                        "subnet-03f527b3f57d450b7"
+                    ],
+                    "securityGroups": [
+                        "sg-0ed4656c2242bc381"
+                    ],
+                    "assignPublicIp": "ENABLED"
+                }
+            },
+            "healthCheckGracePeriodSeconds": 0,
+            "schedulingStrategy": "REPLICA",
+            "deploymentController": {
+                "type": "ECS"
+            },
+            "createdBy": "arn:aws:iam::122610498241:user/github-actions-deployer",
+            "enableECSManagedTags": false,
+            "propagateTags": "NONE",
+            "enableExecuteCommand": false,
+            "availabilityZoneRebalancing": "ENABLED",
+            "resourceManagementType": "CUSTOMER"
+        }
+    ],
+    "failures": []
+}

@@ -1,0 +1,6 @@
+{
+    "taskArns": [
+        "arn:aws:ecs:ap-south-1:122610498241:task/doc-healing-cluster/c8c954834cab47839c50f9d15076ab82",
+        "arn:aws:ecs:ap-south-1:122610498241:task/doc-healing-cluster/7a9e516ceb474e2798834af959f141aa"
+    ]
+}
