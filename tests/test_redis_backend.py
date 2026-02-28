@@ -18,6 +18,7 @@ def mock_redis():
     with patch('doc_healing.queue.redis_backend.Redis') as mock_redis_class:
         mock_conn = MagicMock()
         mock_redis_class.return_value = mock_conn
+        mock_redis_class.from_url.return_value = mock_conn
         yield mock_conn
 
 
