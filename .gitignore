@@ -32,7 +32,7 @@ env/
 .venv
 
 # Poetry
-poetry.lock
+# poetry.lock (Committed for deployment stability)
 
 # Testing
 .pytest_cache/
