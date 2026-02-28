@@ -21,11 +21,17 @@ def get_redis_client() -> Redis:
         redis_db = settings.redis_db
         redis_password = os.getenv("REDIS_PASSWORD", None) # Fallback if setting not defined
 
-        redis_client = Redis(
-            host=redis_host,
-            port=redis_port,
-            db=redis_db,
-            password=redis_password,
-            decode_responses=True,
-        )
+        if settings.redis_url:
+            redis_client = Redis.from_url(
+                settings.redis_url,
+                decode_responses=True,
+            )
+        else:
+            redis_client = Redis(
+                host=redis_host,
+                port=redis_port,
+                db=redis_db,
+                password=redis_password,
+                decode_responses=True,
+            )
     return redis_client

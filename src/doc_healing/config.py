@@ -44,6 +44,7 @@ class Settings(BaseSettings):
     redis_host: str = "localhost"
     redis_port: int = 6379
     redis_db: int = 0
+    redis_url: Optional[str] = None
 
     # Worker configuration
     unified_worker: bool = False
@@ -88,10 +89,16 @@ def get_settings() -> Settings:
                 # Apply overrides from AWS Secrets
                 if "DATABASE_URL" in aws_secrets:
                     _settings.database_url = aws_secrets["DATABASE_URL"]
-                if "REDIS_HOST" in aws_secrets:
-                    _settings.redis_host = aws_secrets["REDIS_HOST"]
-                if "REDIS_PORT" in aws_secrets:
-                    _settings.redis_port = int(aws_secrets["REDIS_PORT"])
+                
+                # Check for explicit REDIS_URL first
+                if "REDIS_URL" in aws_secrets:
+                    _settings.redis_url = aws_secrets["REDIS_URL"]
+                else:
+                    if "REDIS_HOST" in aws_secrets:
+                        _settings.redis_host = aws_secrets["REDIS_HOST"]
+                    if "REDIS_PORT" in aws_secrets:
+                        _settings.redis_port = int(aws_secrets["REDIS_PORT"])
+                        
                 if "BEDROCK_MODEL_ID" in aws_secrets:
                     _settings.bedrock_model_id = aws_secrets["BEDROCK_MODEL_ID"]
                     
