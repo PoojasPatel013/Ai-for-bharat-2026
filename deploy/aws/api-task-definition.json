@@ -32,6 +32,10 @@
                 {
                     "name": "DOC_HEALING_UNIFIED_WORKER",
                     "value": "false"
+                },
+                {
+                    "name": "AWS_REGION",
+                    "value": "ap-south-1"
                 }
             ],
             "logConfiguration": {

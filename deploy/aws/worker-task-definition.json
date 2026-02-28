@@ -12,6 +12,13 @@
         {
             "name": "doc-healing-app",
             "image": "122610498241.dkr.ecr.ap-south-1.amazonaws.com/doc-healing-engine:latest",
+            "command": [
+                "rq",
+                "worker",
+                "webhooks",
+                "validation",
+                "healing"
+            ],
             "essential": true,
             "environment": [
                 {
@@ -25,6 +32,10 @@
                 {
                     "name": "DOC_HEALING_UNIFIED_WORKER",
                     "value": "true"
+                },
+                {
+                    "name": "AWS_REGION",
+                    "value": "ap-south-1"
                 }
             ],
             "logConfiguration": {

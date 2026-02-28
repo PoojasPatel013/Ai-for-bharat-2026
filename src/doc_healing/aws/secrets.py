@@ -5,7 +5,11 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-def get_secret(secret_name: str, region_name: str = "us-east-1") -> dict:
+import os
+
+def get_secret(secret_name: str, region_name: str = None) -> dict:
+    if region_name is None:
+        region_name = os.environ.get("AWS_REGION", "ap-south-1")
     """
     Retrieve a secret from AWS Secrets Manager.
     
