@@ -1,0 +1,241 @@
+============================= test session starts ==============================
+platform linux -- Python 3.10.12, pytest-7.4.4, pluggy-1.6.0 -- /home/fierypooja/.cache/pypoetry/virtualenvs/ai-doc-healing-jmbp0ghN-py3.10/bin/python
+cachedir: .pytest_cache
+hypothesis profile 'default'
+rootdir: /home/fierypooja/hackproject
+configfile: pytest.ini
+testpaths: tests
+plugins: anyio-4.12.1, hypothesis-6.151.9, asyncio-0.23.8, cov-4.1.0
+asyncio: mode=auto
+collecting ... collected 118 items
+
+tests/test_api_endpoints.py::test_github_webhook_endpoint PASSED         [  0%]
+tests/test_api_endpoints.py::test_gitlab_webhook_endpoint PASSED         [  1%]
+tests/test_api_endpoints.py::test_validate_snippet_endpoint PASSED       [  2%]
+tests/test_api_endpoints.py::test_validate_file_endpoint PASSED          [  3%]
+tests/test_api_endpoints.py::test_heal_snippet_endpoint PASSED           [  4%]
+tests/test_api_endpoints.py::test_heal_file_endpoint PASSED              [  5%]
+tests/test_api_endpoints.py::test_webhook_endpoint_with_invalid_payload PASSED [  5%]
+tests/test_api_endpoints.py::test_validation_endpoint_with_missing_fields PASSED [  6%]
+tests/test_api_endpoints_properties.py::test_property_webhook_endpoint_availability[payload0] PASSED [  7%]
+tests/test_api_endpoints_properties.py::test_property_webhook_endpoint_availability[payload1] PASSED [  8%]
+tests/test_api_endpoints_properties.py::test_property_webhook_endpoint_availability[payload2] PASSED [  9%]
+tests/test_api_endpoints_properties.py::test_property_validation_functionality[payload0] PASSED [ 10%]
+tests/test_api_endpoints_properties.py::test_property_validation_functionality[payload1] PASSED [ 11%]
+tests/test_api_endpoints_properties.py::test_property_validation_functionality[payload2] PASSED [ 11%]
+tests/test_api_endpoints_properties.py::test_property_healing_functionality[payload0] PASSED [ 12%]
+tests/test_api_endpoints_properties.py::test_property_healing_functionality[payload1] PASSED [ 13%]
+tests/test_api_startup.py::test_api_startup_lightweight_mode PASSED      [ 14%]
+tests/test_api_startup.py::test_api_startup_full_mode PASSED             [ 15%]
+tests/test_api_startup.py::test_api_startup_logging PASSED               [ 16%]
+tests/test_config.py::test_default_settings PASSED                       [ 16%]
+tests/test_config.py::test_lightweight_mode_configuration PASSED         [ 17%]
+tests/test_config.py::test_full_mode_configuration PASSED                [ 18%]
+tests/test_config.py::test_hybrid_mode_configuration PASSED              [ 19%]
+tests/test_config.py::test_worker_configuration PASSED                   [ 20%]
+tests/test_config.py::test_redis_configuration PASSED                    [ 21%]
+tests/test_config.py::test_api_configuration PASSED                      [ 22%]
+tests/test_config.py::test_get_settings_singleton PASSED                 [ 22%]
+tests/test_connection.py::TestDatabaseConnectionFactory::test_get_database_url_postgresql PASSED [ 23%]
+tests/test_connection.py::TestDatabaseConnectionFactory::test_get_database_url_sqlite PASSED [ 24%]
+tests/test_connection.py::TestDatabaseConnectionFactory::test_create_db_engine_sqlite PASSED [ 25%]
+tests/test_connection.py::TestDatabaseConnectionFactory::test_create_db_engine_postgresql PASSED [ 26%]
+tests/test_connection.py::TestDatabaseConnectionFactory::test_get_db_yields_session PASSED [ 27%]
+tests/test_connection.py::TestDatabaseConnectionFactory::test_get_db_closes_session_on_exit PASSED [ 27%]
+tests/test_deployment_configs.py::test_docker_compose_lightweight_valid PASSED [ 28%]
+tests/test_deployment_configs.py::test_environment_templates_complete PASSED [ 29%]
+tests/test_deployment_configs.py::test_makefile_commands_present PASSED  [ 30%]
+tests/test_memory_backend.py::test_memory_backend_initialization_sync PASSED [ 31%]
+tests/test_memory_backend.py::test_memory_backend_initialization_async PASSED [ 32%]
+tests/test_memory_backend.py::test_enqueue_sync_executes_immediately PASSED [ 33%]
+tests/test_memory_backend.py::test_enqueue_sync_raises_on_error PASSED   [ 33%]
+tests/test_memory_backend.py::test_enqueue_async_queues_task PASSED      [ 34%]
+tests/test_memory_backend.py::test_enqueue_async_handles_errors PASSED   [ 35%]
+tests/test_memory_backend.py::test_get_queue_creates_queue_once PASSED   [ 36%]
+tests/test_memory_backend.py::test_get_queue_creates_different_queues PASSED [ 37%]
+tests/test_memory_backend.py::test_get_task_returns_none_for_empty_queue PASSED [ 38%]
+tests/test_memory_backend.py::test_get_task_returns_queued_task PASSED   [ 38%]
+tests/test_memory_backend.py::test_get_task_with_timeout PASSED          [ 39%]
+tests/test_memory_backend.py::test_mark_complete_removes_task PASSED     [ 40%]
+tests/test_memory_backend.py::test_mark_failed_removes_task PASSED       [ 41%]
+tests/test_memory_backend.py::test_multiple_tasks_async PASSED           [ 42%]
+tests/test_memory_backend.py::test_multiple_queues_async PASSED          [ 43%]
+tests/test_memory_backend.py::test_shutdown_stops_workers PASSED         [ 44%]
+tests/test_memory_backend.py::test_task_with_kwargs PASSED               [ 44%]
+tests/test_memory_backend.py::test_concurrent_enqueue PASSED             [ 45%]
+tests/test_memory_backend_integration.py::test_sync_mode_immediate_execution PASSED [ 46%]
+tests/test_memory_backend_integration.py::test_async_mode_worker_threads PASSED [ 47%]
+tests/test_memory_backend_integration.py::test_multiple_queue_types PASSED [ 48%]
+tests/test_memory_backend_integration.py::test_task_interface_consistency PASSED [ 49%]
+tests/test_memory_backend_integration.py::test_no_persistence_across_restarts PASSED [ 50%]
+tests/test_memory_backend_integration.py::test_error_handling_in_async_mode PASSED [ 50%]
+tests/test_memory_backend_integration.py::test_graceful_shutdown PASSED  [ 51%]
+tests/test_memory_monitoring_properties.py::test_property_memory_metrics_logging PASSED [ 52%]
+tests/test_migration_scripts.py::TestPostgresToSqliteMigration::test_migration_success PASSED [ 53%]
+tests/test_migration_scripts.py::TestPostgresToSqliteMigration::test_migration_error_handling PASSED [ 54%]
+tests/test_migration_scripts.py::TestSqliteToPostgresMigration::test_migration_success PASSED [ 55%]
+tests/test_migration_scripts.py::TestSqliteToPostgresMigration::test_migration_error_handling PASSED [ 55%]
+tests/test_models.py::test_repository_info_creation PASSED               [ 56%]
+tests/test_models.py::test_code_snippet_creation PASSED                  [ 57%]
+tests/test_models.py::test_validation_result_success PASSED              [ 58%]
+tests/test_models.py::test_validation_result_failure PASSED              [ 59%]
+tests/test_queue_factory.py::test_get_queue_backend_returns_redis_backend PASSED [ 60%]
+tests/test_queue_factory.py::test_get_queue_backend_returns_memory_backend PASSED [ 61%]
+tests/test_queue_factory.py::test_get_queue_backend_returns_singleton PASSED [ 61%]
+tests/test_queue_factory.py::test_reset_queue_backend_clears_singleton PASSED [ 62%]
+tests/test_queue_factory.py::test_reset_queue_backend_calls_shutdown_on_memory_backend PASSED [ 63%]
+tests/test_queue_factory.py::test_reset_queue_backend_does_not_call_shutdown_on_redis_backend PASSED [ 64%]
+tests/test_queue_factory.py::test_factory_logs_backend_initialization PASSED [ 65%]
+tests/test_queue_factory.py::test_factory_with_redis_backend_configuration FAILED [ 66%]
+tests/test_queue_factory.py::test_factory_with_memory_backend_configuration PASSED [ 66%]
+tests/test_queue_factory.py::test_reset_queue_backend_when_none_exists PASSED [ 67%]
+tests/test_redis_backend.py::test_redis_backend_initialization PASSED    [ 68%]
+tests/test_redis_backend.py::test_enqueue_creates_task PASSED            [ 69%]
+tests/test_redis_backend.py::test_enqueue_calls_rq_enqueue PASSED        [ 70%]
+tests/test_redis_backend.py::test_get_queue_creates_queue_once PASSED    [ 71%]
+tests/test_redis_backend.py::test_get_queue_creates_different_queues PASSED [ 72%]
+tests/test_redis_backend.py::test_get_task_returns_none_for_empty_queue PASSED [ 72%]
+tests/test_redis_backend.py::test_get_task_returns_first_task PASSED     [ 73%]
+tests/test_redis_backend.py::test_mark_complete_logs_completion PASSED   [ 74%]
+tests/test_redis_backend.py::test_mark_failed_logs_error PASSED          [ 75%]
+tests/test_redis_backend.py::test_mark_complete_raises_on_missing_job PASSED [ 76%]
+tests/test_redis_backend.py::test_mark_failed_raises_on_missing_job PASSED [ 77%]
+tests/test_task_processing_properties.py::test_property_task_processing_types PASSED [ 77%]
+tests/test_unified_worker.py::test_unified_worker_initialization_sync PASSED [ 78%]
+tests/test_unified_worker.py::test_unified_worker_initialization_async PASSED [ 79%]
+tests/test_unified_worker.py::test_unified_worker_start_sync_mode PASSED [ 80%]
+tests/test_unified_worker.py::test_unified_worker_start_async_mode PASSED [ 81%]
+tests/test_unified_worker.py::test_unified_worker_stop PASSED            [ 82%]
+tests/test_unified_worker.py::test_unified_worker_stop_when_not_running PASSED [ 83%]
+tests/test_unified_worker.py::test_unified_worker_signal_handler PASSED  [ 83%]
+tests/test_unified_worker.py::test_unified_worker_monitors_thread_health PASSED [ 84%]
+tests/test_unified_worker.py::test_unified_worker_redis_mode_placeholder PASSED [ 85%]
+tests/test_unified_worker.py::test_unified_worker_task_routing PASSED    [ 86%]
+tests/test_unified_worker.py::test_unified_worker_error_handling PASSED  [ 87%]
+tests/test_unified_worker.py::test_unified_worker_keyboard_interrupt PASSED [ 88%]
+tests/test_worker_tasks.py::TestWebhookTasks::test_process_github_webhook_success PASSED [ 88%]
+tests/test_worker_tasks.py::TestWebhookTasks::test_process_github_webhook_invalid_payload PASSED [ 89%]
+tests/test_worker_tasks.py::TestWebhookTasks::test_process_github_webhook_missing_event_type PASSED [ 90%]
+tests/test_worker_tasks.py::TestWebhookTasks::test_process_gitlab_webhook_success PASSED [ 91%]
+tests/test_worker_tasks.py::TestWebhookTasks::test_process_gitlab_webhook_invalid_payload PASSED [ 92%]
+tests/test_worker_tasks.py::TestValidationTasks::test_validate_code_snippet_success PASSED [ 93%]
+tests/test_worker_tasks.py::TestValidationTasks::test_validate_code_snippet_missing_parameters PASSED [ 94%]
+tests/test_worker_tasks.py::TestValidationTasks::test_validate_documentation_file_success PASSED [ 94%]
+tests/test_worker_tasks.py::TestValidationTasks::test_validate_documentation_file_missing_parameters PASSED [ 95%]
+tests/test_worker_tasks.py::TestHealingTasks::test_heal_code_snippet_success PASSED [ 96%]
+tests/test_worker_tasks.py::TestHealingTasks::test_heal_code_snippet_missing_parameters PASSED [ 97%]
+tests/test_worker_tasks.py::TestHealingTasks::test_heal_code_snippet_no_errors PASSED [ 98%]
+tests/test_worker_tasks.py::TestHealingTasks::test_heal_documentation_file_success PASSED [ 99%]
+tests/test_worker_tasks.py::TestHealingTasks::test_heal_documentation_file_missing_parameters PASSED [100%]
+
+=================================== FAILURES ===================================
+________________ test_factory_with_redis_backend_configuration _________________
+
+    def test_factory_with_redis_backend_configuration():
+        """Test factory with full Redis backend configuration."""
+        with patch('doc_healing.queue.factory.get_settings') as mock_factory_settings:
+            with patch('doc_healing.queue.redis_backend.get_settings') as mock_redis_settings:
+                settings = MagicMock()
+                settings.queue_backend = QueueBackendEnum.REDIS
+                settings.deployment_mode = MagicMock(value="full")
+                settings.redis_host = "redis.example.com"
+                settings.redis_port = 6380
+                settings.redis_db = 1
+                mock_factory_settings.return_value = settings
+                mock_redis_settings.return_value = settings
+    
+                with patch('doc_healing.queue.redis_backend.Redis') as mock_redis:
+                    backend = get_queue_backend()
+    
+                    # Verify Redis was initialized with correct settings
+>                   mock_redis.assert_called_once()
+
+tests/test_queue_factory.py:164: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <MagicMock name='Redis' id='139595702603536'>
+
+    def assert_called_once(self):
+        """assert that the mock was called only once.
+        """
+        if not self.call_count == 1:
+            msg = ("Expected '%s' to have been called once. Called %s times.%s"
+                   % (self._mock_name or 'mock',
+                      self.call_count,
+                      self._calls_repr()))
+>           raise AssertionError(msg)
+E           AssertionError: Expected 'Redis' to have been called once. Called 0 times.
+E           Calls: [call.from_url(<MagicMock name='get_settings().redis_url' id='139595702658064'>, decode_responses=False)].
+
+/usr/lib/python3.10/unittest/mock.py:908: AssertionError
+=============================== warnings summary ===============================
+src/doc_healing/db/base.py:6
+  /home/fierypooja/hackproject/src/doc_healing/db/base.py:6: MovedIn20Warning: The ``declarative_base()`` function is now available as sqlalchemy.orm.declarative_base(). (deprecated since: 2.0) (Background on SQLAlchemy 2.0 at: https://sqlalche.me/e/b8d9)
+    Base = declarative_base()
+
+tests/test_api_endpoints.py: 8 warnings
+tests/test_api_startup.py: 3 warnings
+  /home/fierypooja/hackproject/src/doc_healing/api/main.py:72: DeprecationWarning: 
+          on_event is deprecated, use lifespan event handlers instead.
+  
+          Read more about it in the
+          [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).
+          
+    @app.on_event("startup")
+
+tests/test_api_endpoints.py: 8 warnings
+tests/test_api_startup.py: 3 warnings
+  /home/fierypooja/.cache/pypoetry/virtualenvs/ai-doc-healing-jmbp0ghN-py3.10/lib/python3.10/site-packages/fastapi/applications.py:4495: DeprecationWarning: 
+          on_event is deprecated, use lifespan event handlers instead.
+  
+          Read more about it in the
+          [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).
+          
+    return self.router.on_event(event_type)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+
+---------- coverage: platform linux, python 3.10.12-final-0 ----------
+Name                                      Stmts   Miss  Cover   Missing
+-----------------------------------------------------------------------
+src/doc_healing/__init__.py                   1      0   100%
+src/doc_healing/api/__init__.py               0      0   100%
+src/doc_healing/api/main.py                 128     19    85%   101, 140-142, 173-175, 215-217, 253-255, 296-298, 334-336
+src/doc_healing/aws/__init__.py               0      0   100%
+src/doc_healing/aws/secrets.py               25     25     0%   1-48
+src/doc_healing/config.py                    56     16    71%   85-107
+src/doc_healing/db/__init__.py                4      0   100%
+src/doc_healing/db/base.py                    2      0   100%
+src/doc_healing/db/connection.py             24      0   100%
+src/doc_healing/db/models.py                142      0   100%
+src/doc_healing/llm/__init__.py               0      0   100%
+src/doc_healing/llm/bedrock_client.py        32     10    69%   48-55, 63-64, 66-68
+src/doc_healing/llm/prompts.py                3      0   100%
+src/doc_healing/models/__init__.py            8      0   100%
+src/doc_healing/models/base.py               29      0   100%
+src/doc_healing/models/config.py             38      0   100%
+src/doc_healing/models/healing.py            15      0   100%
+src/doc_healing/models/mapping.py            41      0   100%
+src/doc_healing/models/orchestration.py      40      0   100%
+src/doc_healing/models/validation.py         36      0   100%
+src/doc_healing/models/webhook.py            11      0   100%
+src/doc_healing/monitoring/__init__.py        0      0   100%
+src/doc_healing/monitoring/memory.py         16      0   100%
+src/doc_healing/queue/__init__.py             4      0   100%
+src/doc_healing/queue/base.py                23      4    83%   55, 73, 86, 100
+src/doc_healing/queue/factory.py             26      0   100%
+src/doc_healing/queue/memory_backend.py     105      1    99%   262
+src/doc_healing/queue/queue_manager.py       21      9    57%   23, 36, 49, 62, 77, 92, 107-109
+src/doc_healing/queue/redis_backend.py       53      0   100%
+src/doc_healing/queue/redis_client.py        16     10    38%   16-37
+src/doc_healing/workers/__init__.py           0      0   100%
+src/doc_healing/workers/tasks.py             76      6    92%   84, 272-273, 295-297
+src/doc_healing/workers/unified.py           87      2    98%   118, 221
+-----------------------------------------------------------------------
+TOTAL                                      1062    102    90%
+Coverage HTML written to dir htmlcov
+Coverage XML written to file coverage.xml
+
+=========================== short test summary info ============================
+FAILED tests/test_queue_factory.py::test_factory_with_redis_backend_configuration
+================= 1 failed, 117 passed, 23 warnings in 28.39s ==================

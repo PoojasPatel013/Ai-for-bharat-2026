@@ -1,0 +1,100 @@
+{
+    "taskDefinition": {
+        "taskDefinitionArn": "arn:aws:ecs:ap-south-1:122610498241:task-definition/doc-healing-api:9",
+        "containerDefinitions": [
+            {
+                "name": "doc-healing-app",
+                "image": "122610498241.dkr.ecr.ap-south-1.amazonaws.com/doc-healing-engine:684aeba801f475e1b9b65d3b38bc0259d58aa64c",
+                "cpu": 0,
+                "portMappings": [
+                    {
+                        "containerPort": 8000,
+                        "hostPort": 8000,
+                        "protocol": "tcp"
+                    }
+                ],
+                "essential": true,
+                "environment": [
+                    {
+                        "name": "DOC_HEALING_AWS_SECRET_NAME",
+                        "value": "doc-healing/production/secrets"
+                    },
+                    {
+                        "name": "AWS_REGION",
+                        "value": "ap-south-1"
+                    },
+                    {
+                        "name": "DOC_HEALING_DEPLOYMENT_MODE",
+                        "value": "full"
+                    },
+                    {
+                        "name": "DOC_HEALING_UNIFIED_WORKER",
+                        "value": "false"
+                    }
+                ],
+                "mountPoints": [],
+                "volumesFrom": [],
+                "logConfiguration": {
+                    "logDriver": "awslogs",
+                    "options": {
+                        "awslogs-group": "/ecs/doc-healing-api",
+                        "awslogs-create-group": "true",
+                        "awslogs-region": "ap-south-1",
+                        "awslogs-stream-prefix": "ecs"
+                    }
+                },
+                "systemControls": []
+            }
+        ],
+        "family": "doc-healing-api",
+        "taskRoleArn": "arn:aws:iam::122610498241:role/ecsTaskRole",
+        "executionRoleArn": "arn:aws:iam::122610498241:role/ecsTaskExecutionRole",
+        "networkMode": "awsvpc",
+        "revision": 9,
+        "volumes": [],
+        "status": "ACTIVE",
+        "requiresAttributes": [
+            {
+                "name": "com.amazonaws.ecs.capability.logging-driver.awslogs"
+            },
+            {
+                "name": "ecs.capability.execution-role-awslogs"
+            },
+            {
+                "name": "com.amazonaws.ecs.capability.ecr-auth"
+            },
+            {
+                "name": "com.amazonaws.ecs.capability.docker-remote-api.1.19"
+            },
+            {
+                "name": "com.amazonaws.ecs.capability.task-iam-role"
+            },
+            {
+                "name": "ecs.capability.execution-role-ecr-pull"
+            },
+            {
+                "name": "com.amazonaws.ecs.capability.docker-remote-api.1.18"
+            },
+            {
+                "name": "ecs.capability.task-eni"
+            },
+            {
+                "name": "com.amazonaws.ecs.capability.docker-remote-api.1.29"
+            }
+        ],
+        "placementConstraints": [],
+        "compatibilities": [
+            "EC2",
+            "FARGATE",
+            "MANAGED_INSTANCES"
+        ],
+        "requiresCompatibilities": [
+            "FARGATE"
+        ],
+        "cpu": "1024",
+        "memory": "2048",
+        "registeredAt": "2026-02-28T19:05:18.886000+05:30",
+        "registeredBy": "arn:aws:iam::122610498241:user/github-actions-deployer"
+    },
+    "tags": []
+}

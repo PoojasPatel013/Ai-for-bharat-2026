@@ -1,0 +1,6 @@
+{
+    "taskDefinitionArns": [
+        "arn:aws:ecs:ap-south-1:122610498241:task-definition/doc-healing-api:9"
+    ],
+    "NextToken": "eyJuZXh0VG9rZW4iOiBudWxsLCAiYm90b190cnVuY2F0ZV9hbW91bnQiOiAxfQ=="
+}
