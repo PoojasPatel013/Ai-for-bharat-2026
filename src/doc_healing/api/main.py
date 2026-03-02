@@ -18,9 +18,48 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+description = """
+A GitHub/GitLab bot that validates and auto-corrects code snippets in documentation.
+
+## Guide
+
+### 1) Configuration YML File Creation
+To configure the Self-Healing Documentation Engine for your repository, create a `.doc-healing.yml` file in the root of your project.
+
+**Example `.doc-healing.yml`:**
+```yaml
+enabled: true
+
+documentation:
+  include:
+    - "docs/**/*.md"
+    - "README.md"
+  exclude:
+    - "venv/**"
+
+languages:
+  python:
+    enabled: true
+    timeout: 30
+```
+
+### 2) Webhook Creation & What is a Webhook
+**What is a Webhook?**
+A webhook is a way for an app to provide other applications with real-time information. In this context, GitHub or GitLab will send HTTP POST requests to this Documentation Engine whenever certain events occur (like a Pull Request), allowing the engine to automatically validate and heal code snippets in your documentation.
+
+**How to create a Webhook:**
+1. Go to your repository settings in GitHub/GitLab.
+2. Navigate to the **Webhooks** section and click **Add webhook**.
+3. Set the **Payload URL** to `http://doc-healing-alb-1100630618.ap-south-1.elb.amazonaws.com/webhooks/github` (or `/webhooks/gitlab`).
+4. Set the **Content type** to `application/json`.
+5. Under **Secret**, use the following token exactly: `MySuperSecretWebhookToken2026!`
+6. Select the events you want to trigger the webhook (e.g., Pull Requests, Pushes).
+7. Save the webhook.
+"""
+
 app = FastAPI(
     title="Self-Healing Documentation Engine",
-    description="A GitHub/GitLab bot that validates and auto-corrects code snippets in documentation",
+    description=description,
     version="0.1.0",
 )
 
