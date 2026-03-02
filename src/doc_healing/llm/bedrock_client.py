@@ -51,7 +51,8 @@ class BedrockLLMClient:
             # The response from Claude 3 Messages API has content as an array of blocks
             content_blocks = response_body.get('content', [])
             if content_blocks and len(content_blocks) > 0:
-                return content_blocks[0].get('text', '')
+                raw_text = content_blocks[0].get('text', '')
+                return self._strip_code_fences(raw_text)
                 
             return None
             
@@ -68,3 +69,14 @@ class BedrockLLMClient:
         except Exception as e:
             logger.error(f"Unexpected error calling Bedrock: {e}")
             return None
+
+    @staticmethod
+    def _strip_code_fences(text: str) -> str:
+        """Remove markdown code fences from AI response."""
+        import re
+        text = text.strip()
+        # Match ```language\n...\n``` or ```\n...\n```
+        match = re.match(r'^```\w*\s*\n(.*?)```\s*$', text, re.DOTALL)
+        if match:
+            return match.group(1).strip()
+        return text

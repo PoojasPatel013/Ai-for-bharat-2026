@@ -2,7 +2,7 @@
 
 import logging
 from typing import Dict, Any
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
@@ -149,20 +149,32 @@ async def health() -> JSONResponse:
 # Webhook Endpoints
 
 @app.post("/webhooks/github", response_model=TaskResponse)
-async def handle_github_webhook(payload: Dict[str, Any]) -> TaskResponse:
-    """Handle GitHub webhook events.
+async def handle_github_webhook(request: Request) -> TaskResponse:
+    """Handle GitHub webhook events with signature verification.
     
-    Enqueues a task to process the GitHub webhook payload.
-    
-    Args:
-        payload: The webhook payload from GitHub
-        
-    Returns:
-        TaskResponse with task_id and status
-        
-    Raises:
-        HTTPException: If enqueuing fails
+    Verifies the X-Hub-Signature-256 header, then enqueues a task
+    to process the GitHub webhook payload.
     """
+    import hashlib
+    import hmac
+    
+    settings = get_settings()
+    body = await request.body()
+    
+    # Verify webhook signature if secret is configured
+    webhook_secret = settings.github_webhook_secret
+    if webhook_secret:
+        signature = request.headers.get("X-Hub-Signature-256", "")
+        expected = "sha256=" + hmac.new(
+            webhook_secret.encode(), body, hashlib.sha256
+        ).hexdigest()
+        if not hmac.compare_digest(signature, expected):
+            logger.warning("Invalid webhook signature")
+            raise HTTPException(status_code=401, detail="Invalid signature")
+    
+    import json as json_mod
+    payload = json_mod.loads(body)
+    
     try:
         # Lazy import to avoid Windows fork context issues
         from doc_healing.queue.factory import get_queue_backend

@@ -181,22 +181,99 @@ def process_github_webhook(payload: Dict[str, Any]) -> None:
                     f"Could not analyze: `{str(e)[:80]}`"
                 )
         
-        # Step 5: Build and post comment
+        # Step 4b: Analyze changed code files directly
+        for code_file in code_files:
+            fname = code_file.get("filename", "")
+            status = code_file.get("status", "")
+            patch = code_file.get("patch", "")
+            
+            if status == "removed" or not patch:
+                continue
+            
+            # Extract only added lines from the diff
+            added_lines = []
+            for line in patch.split("\n"):
+                if line.startswith("+") and not line.startswith("+++"):
+                    added_lines.append(line[1:])  # strip the leading +
+            
+            if not added_lines:
+                continue
+            
+            added_code = "\n".join(added_lines).strip()
+            if len(added_code) < 10:
+                continue
+            
+            # Detect language from extension
+            ext_lang_map = {
+                ".py": "python", ".js": "javascript", ".ts": "typescript",
+                ".java": "java", ".go": "go", ".rb": "ruby", ".rs": "rust",
+                ".c": "c", ".cpp": "cpp", ".php": "php"
+            }
+            lang = "python"
+            for ext, l in ext_lang_map.items():
+                if fname.endswith(ext):
+                    lang = l
+                    break
+            
+            logger.info(f"Analyzing code file {fname} ({lang}, {len(added_lines)} new lines)")
+            
+            try:
+                result = heal_code_snippet(
+                    fname, f"file-{fname}", added_code, lang,
+                    ["Review the newly added code for bugs, logic errors, missing error handling, or potential issues."]
+                )
+                
+                healed = result.get("healed", False)
+                healed_code = result.get("healed_code", "")
+                
+                if healed and healed_code and healed_code.strip() != added_code.strip():
+                    snippet_results.append(
+                        f"### 🔧 Issues found in `{fname}`\n\n"
+                        f"**New code added:**\n```{lang}\n{added_code[:500]}\n```\n\n"
+                        f"**✨ Suggested fix:**\n```{lang}\n{healed_code.strip()[:500]}\n```"
+                    )
+                else:
+                    snippet_results.append(
+                        f"### ✅ `{fname}` — New code looks good!"
+                    )
+            except Exception as e:
+                logger.error(f"Error analyzing code file {fname}: {e}")
+        
+        # Step 5: Build and post comment (with duplicate detection)
         if snippet_results:
-            summary_lines.append("### 🔬 Code Snippet Analysis")
+            summary_lines.append("### 🔬 Code Analysis Results")
             summary_lines.append("")
             summary_lines.extend(snippet_results)
         else:
-            if doc_files:
-                summary_lines.append("### 🔬 Code Snippet Analysis\n")
-                summary_lines.append("No code snippets found in the changed documentation files.\n")
+            if doc_files or code_files:
+                summary_lines.append("### 🔬 Code Analysis Results\n")
+                summary_lines.append("✅ All code looks good — no issues found!\n")
             else:
-                summary_lines.append("ℹ️ No documentation files were modified in this PR.\n")
+                summary_lines.append("ℹ️ No documentation or code files were modified in this PR.\n")
         
         comment_body = "\n".join(summary_lines)
         
-        logger.info(f"Posting comment to {comments_url}")
-        post_resp = client.post(comments_url, json={"body": comment_body}, headers=headers)
+        # Fix #2: Check for existing bot comment and update it instead of creating a duplicate
+        BOT_SIGNATURE = "🤖 **Self-Healing Documentation Engine**"
+        existing_comment_id = None
+        
+        existing_comments_resp = client.get(comments_url, headers=headers)
+        if existing_comments_resp.status_code == 200:
+            for comment in existing_comments_resp.json():
+                if BOT_SIGNATURE in comment.get("body", ""):
+                    existing_comment_id = comment.get("id")
+                    break
+        
+        if existing_comment_id:
+            # PATCH existing comment
+            patch_url = f"https://api.github.com/repos/{repo_full_name}/issues/comments/{existing_comment_id}"
+            logger.info(f"Updating existing comment {existing_comment_id}")
+            post_resp = client.patch(patch_url, json={"body": comment_body}, headers=headers)
+        else:
+            # POST new comment
+            logger.info(f"Posting new comment to {comments_url}")
+            post_resp = client.post(comments_url, json={"body": comment_body}, headers=headers)
+        
         logger.info(f"GitHub API response: {post_resp.status_code}")
     
     logger.info("GitHub webhook processed successfully")

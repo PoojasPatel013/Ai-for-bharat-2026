@@ -61,6 +61,7 @@ class Settings(BaseSettings):
 
     # GitHub integration
     github_token: Optional[str] = None
+    github_webhook_secret: Optional[str] = None
 
     model_config = SettingsConfigDict(
         env_file=".env",
@@ -107,6 +108,9 @@ def get_settings() -> Settings:
 
                 if "GITHUB_TOKEN" in aws_secrets:
                     _settings.github_token = aws_secrets["GITHUB_TOKEN"]
+
+                if "GITHUB_WEBHOOK_SECRET" in aws_secrets:
+                    _settings.github_webhook_secret = aws_secrets["GITHUB_WEBHOOK_SECRET"]
                     
                 logging.getLogger(__name__).info(f"Loaded credentials securely from AWS Secrets Manager: {secret_name}")
             except Exception as e:
