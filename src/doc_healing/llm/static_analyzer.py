@@ -170,6 +170,248 @@ def _generate_fix(code: str, errors: List[Dict], func_defs: Dict) -> str:
     return "\n".join(lines)
 
 
+def analyze_javascript_code(code: str) -> Dict[str, Any]:
+    """Analyze JavaScript/TypeScript code for common errors using heuristics.
+    
+    Checks for:
+      - Mismatched brackets/parens/braces
+      - C-style functions that don't exist in JS (scanf, printf, ptf)
+      - Obvious syntax patterns ($$, unclosed strings)
+    """
+    errors = []
+    
+    # Check mismatched brackets
+    bracket_errors = _check_brackets(code)
+    errors.extend(bracket_errors)
+    
+    # Check for C-only functions used in JS context
+    c_only_funcs = {"scanf", "printf", "ptf", "gets", "puts", "fprintf", "fscanf"}
+    for line_no, line in enumerate(code.split("\n"), 1):
+        stripped = line.strip()
+        for func in c_only_funcs:
+            if re.search(rf'\b{func}\s*\(', stripped):
+                errors.append({
+                    "type": "ReferenceError",
+                    "message": f"'{func}' is not defined in JavaScript — this is a C/C++ function",
+                    "line": line_no,
+                    "detail": f"Line {line_no}: '{func}' does not exist in JS. Use console.log(), prompt(), etc."
+                })
+        
+        # Check for $$ which is not valid in most contexts
+        if "$$" in stripped and not stripped.startswith("//") and not stripped.startswith("/*"):
+            errors.append({
+                "type": "SyntaxError",
+                "message": "'$$' is not a valid expression",
+                "line": line_no,
+                "detail": f"Line {line_no}: '$$' is not valid JavaScript syntax"
+            })
+    
+    return {
+        "errors": errors,
+        "fixed_code": None,
+        "has_issues": len(errors) > 0,
+        "analysis_method": "static_js"
+    }
+
+
+def analyze_generic_code(code: str, language: str = "unknown") -> Dict[str, Any]:
+    """Analyze code of any language using generic heuristics.
+    
+    Detects:
+      - Mismatched brackets/parens/braces
+      - Mixed-language patterns (Python print with C semicolons)
+      - Undefined or nonsensical function names
+      - Completely malformed lines
+    """
+    errors = []
+    
+    # Check mismatched brackets
+    bracket_errors = _check_brackets(code)
+    errors.extend(bracket_errors)
+    
+    # Detect mixed-language patterns
+    lines = code.split("\n")
+    for line_no, line in enumerate(lines, 1):
+        stripped = line.strip()
+        if not stripped or stripped.startswith("#") or stripped.startswith("//"):
+            continue
+        
+        # Python print() with C-style semicolons
+        if re.search(r'\bprint\s*\(.*\)\s*;', stripped):
+            errors.append({
+                "type": "SyntaxWarning",
+                "message": "Mixed-language pattern: Python-style print() with C/JS-style semicolon",
+                "line": line_no,
+                "detail": f"Line {line_no}: 'print(...);\' — remove semicolon for Python or use console.log() for JS"
+            })
+        
+        # C-style functions that are obviously wrong in most languages
+        nonsense_funcs = {"ptf", "prnt", "prinf", "sacanf"}
+        for func in nonsense_funcs:
+            if re.search(rf'\b{func}\s*\(', stripped):
+                errors.append({
+                    "type": "ReferenceError",
+                    "message": f"'{func}' is not a recognized function — did you mean 'print' or 'printf'?",
+                    "line": line_no,
+                    "detail": f"Line {line_no}: Possible typo in function name '{func}'"
+                })
+        
+        # scanf/printf used outside C/C++
+        if language not in ("c", "cpp", "c++"):
+            for func in ("scanf", "printf"):
+                if re.search(rf'\b{func}\s*\(', stripped):
+                    errors.append({
+                        "type": "ReferenceError",
+                        "message": f"'{func}' is a C/C++ function, not valid in {language}",
+                        "line": line_no,
+                        "detail": f"Line {line_no}: '{func}' is not available in {language}"
+                    })
+        
+        # $$ in non-shell/non-perl contexts
+        if "$$" in stripped and language not in ("bash", "sh", "perl", "shell"):
+            errors.append({
+                "type": "SyntaxError",
+                "message": "'$$' is not valid syntax in " + language,
+                "line": line_no,
+                "detail": f"Line {line_no}: Unexpected '$$'"
+            })
+    
+    # Try Python compile as a bonus check — catches syntax errors if the code
+    # happens to look like Python
+    if not errors:
+        try:
+            compile(code, "<snippet>", "exec")
+        except SyntaxError as e:
+            errors.append({
+                "type": "SyntaxError",
+                "message": str(e),
+                "line": e.lineno,
+                "detail": f"Line {e.lineno}: {e.msg}"
+            })
+    
+    return {
+        "errors": errors,
+        "fixed_code": None,
+        "has_issues": len(errors) > 0,
+        "analysis_method": "static_generic"
+    }
+
+
+def _check_brackets(code: str) -> List[Dict]:
+    """Check for mismatched brackets, parentheses, and braces."""
+    errors = []
+    stack = []
+    pairs = {"(": ")", "[": "]", "{": "}"}
+    closing = {v: k for k, v in pairs.items()}
+    in_string = False
+    string_char = None
+    
+    for line_no, line in enumerate(code.split("\n"), 1):
+        for i, ch in enumerate(line):
+            # Skip characters inside strings
+            if ch in ('"', "'") and (i == 0 or line[i-1] != "\\"):
+                if in_string and ch == string_char:
+                    in_string = False
+                elif not in_string:
+                    in_string = True
+                    string_char = ch
+                continue
+            
+            if in_string:
+                continue
+            
+            if ch in pairs:
+                stack.append((ch, line_no))
+            elif ch in closing:
+                if not stack:
+                    errors.append({
+                        "type": "SyntaxError",
+                        "message": f"Unmatched closing '{ch}'",
+                        "line": line_no,
+                        "detail": f"Line {line_no}: Found closing '{ch}' without matching opening '{closing[ch]}'"
+                    })
+                else:
+                    top, _ = stack[-1]
+                    if pairs.get(top) == ch:
+                        stack.pop()
+                    else:
+                        errors.append({
+                            "type": "SyntaxError",
+                            "message": f"Mismatched bracket: expected '{pairs[top]}' but found '{ch}'",
+                            "line": line_no,
+                            "detail": f"Line {line_no}: Expected '{pairs[top]}' to close '{top}' but got '{ch}'"
+                        })
+    
+    for bracket, line_no in stack:
+        errors.append({
+            "type": "SyntaxError",
+            "message": f"Unclosed '{bracket}'",
+            "line": line_no,
+            "detail": f"Line {line_no}: '{bracket}' is never closed"
+        })
+    
+    return errors
+
+
+def detect_language(code: str) -> str:
+    """Attempt to auto-detect the programming language of a code snippet."""
+    code_lower = code.lower()
+    
+    # Python indicators
+    if re.search(r'\bdef \w+\s*\(', code) or re.search(r'\bimport \w+', code):
+        return "python"
+    if re.search(r'\bprint\s*\(', code) and ";" not in code:
+        return "python"
+    
+    # JavaScript indicators
+    if re.search(r'\b(const|let|var)\s+\w+', code) or re.search(r'\bconsole\.\w+', code):
+        return "javascript"
+    if re.search(r'\bfunction\s+\w+', code) or "=>" in code:
+        return "javascript"
+    
+    # C/C++ indicators
+    if re.search(r'#include\s*<', code) or re.search(r'\bint\s+main\s*\(', code):
+        return "c"
+    if re.search(r'\b(printf|scanf)\s*\(', code) and ";" in code:
+        return "c"
+    
+    # Java
+    if re.search(r'\bpublic\s+(static\s+)?class\s+', code):
+        return "java"
+    
+    # Bash
+    if code.startswith("#!/bin/") or re.search(r'\becho\s+', code):
+        return "bash"
+    
+    # Fallback: try Python compile
+    try:
+        compile(code, "<detect>", "exec")
+        return "python"
+    except SyntaxError:
+        pass
+    
+    return "unknown"
+
+
+def analyze_code(code: str, language: str = None) -> Dict[str, Any]:
+    """Unified dispatcher — analyze code in any language.
+    
+    Auto-detects language if not provided, routes to the best available
+    analyzer, and returns a consistent result dict.
+    """
+    if not language or language == "unknown":
+        language = detect_language(code)
+    
+    lang = language.lower()
+    
+    if lang in ("python", "py"):
+        return analyze_python_code(code)
+    elif lang in ("javascript", "js", "typescript", "ts"):
+        return analyze_javascript_code(code)
+    else:
+        return analyze_generic_code(code, language=lang)
+
+
 def format_errors_markdown(errors: List[Dict]) -> str:
     """Format errors as a markdown list for PR comments."""
     if not errors:
@@ -177,7 +419,12 @@ def format_errors_markdown(errors: List[Dict]) -> str:
     
     lines = []
     for e in errors:
-        icon = {"SyntaxError": "🔴", "TypeError": "🟡"}.get(e["type"], "⚠️")
+        icon = {
+            "SyntaxError": "🔴",
+            "SyntaxWarning": "🟠",
+            "TypeError": "🟡",
+            "ReferenceError": "🔵",
+        }.get(e["type"], "⚠️")
         lines.append(f"- {icon} **{e['type']}**: {e['message']}")
     
     return "\n".join(lines)

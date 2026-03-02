@@ -11,7 +11,7 @@ from typing import Any, Dict, Optional
 from doc_healing.queue.factory import get_queue_backend
 from doc_healing.llm.bedrock_client import BedrockLLMClient
 from doc_healing.llm.prompts import build_healing_prompt, HEALING_SYSTEM_PROMPT
-from doc_healing.llm.static_analyzer import analyze_python_code, format_errors_markdown
+from doc_healing.llm.static_analyzer import analyze_python_code, analyze_code, detect_language, format_errors_markdown
 
 logger = logging.getLogger(__name__)
 
@@ -88,7 +88,7 @@ def process_github_webhook(payload: Dict[str, Any]) -> None:
         
         # Step 2: Build PR summary
         summary_lines = [
-            f"🤖 **Self-Healing Documentation Engine** — _Powered by Amazon Bedrock_ — analyzed PR #{pr_number}\n",
+            f"🏜️ **OASIS — Self-Healing Documentation Engine** — _Powered by Amazon Bedrock_ — analyzed PR #{pr_number}\n",
             f"### 📊 PR Summary",
             f"| Category | Count |",
             f"|---|---|",
@@ -132,15 +132,59 @@ def process_github_webhook(payload: Dict[str, Any]) -> None:
             
             content = doc_resp.text.replace('\r\n', '\n')
             
-            # Extract code blocks with any language tag
-            pattern = r'```(\w+)\s*\n(.*?)(?:\n```|$)'
-            matches = re.findall(pattern, content, re.DOTALL)
+            # Extract fenced code blocks — WITH or WITHOUT a language tag
+            # Pattern 1: ```language\n...\n``` (tagged blocks)
+            pattern_tagged = r'```(\w+)\s*\n(.*?)(?:\n```|$)'
+            # Pattern 2: ```\n...\n``` (untagged blocks)
+            pattern_untagged = r'```\s*\n(.*?)(?:\n```|$)'
             
-            for lang, code in matches:
+            tagged_matches = re.findall(pattern_tagged, content, re.DOTALL)
+            for lang, code in tagged_matches:
                 code = code.strip()
                 if not code or lang.lower() not in SUPPORTED_LANGS:
                     continue
                 all_snippets.append({"file": fname, "lang": lang.lower(), "code": code})
+            
+            # For untagged blocks, auto-detect the language
+            untagged_matches = re.findall(pattern_untagged, content, re.DOTALL)
+            # Remove any that were already captured by the tagged regex
+            tagged_code_set = {code.strip() for _, code in tagged_matches}
+            for code in untagged_matches:
+                code = code.strip()
+                if not code or code in tagged_code_set:
+                    continue
+                detected_lang = detect_language(code)
+                logger.info(f"Auto-detected language '{detected_lang}' for untagged block in {fname}")
+                all_snippets.append({"file": fname, "lang": detected_lang, "code": code})
+            
+            # Also scan the diff patch for code-like lines NOT in any fenced block
+            patch = doc_file.get("patch", "")
+            if patch:
+                added_lines = []
+                for line in patch.split("\n"):
+                    if line.startswith("+") and not line.startswith("+++"):
+                        added_lines.append(line[1:])
+                
+                if added_lines:
+                    # Filter out markdown and blank lines to find raw code
+                    code_like_lines = []
+                    for line in added_lines:
+                        stripped = line.strip()
+                        # Skip empty, markdown headings, markdown list items, markdown links, etc.
+                        if (not stripped or stripped.startswith("#") or 
+                            stripped.startswith("```") or stripped.startswith("-") or
+                            stripped.startswith("*") or stripped.startswith(">") or
+                            stripped.startswith("|") or stripped.startswith("!")):
+                            continue
+                        # Lines that look like code: contain parens, semicolons, braces, or assignment
+                        if re.search(r'[();{}=]', stripped):
+                            code_like_lines.append(stripped)
+                    
+                    if code_like_lines:
+                        raw_code = "\n".join(code_like_lines)
+                        detected_lang = detect_language(raw_code)
+                        logger.info(f"Found {len(code_like_lines)} code-like line(s) in diff of {fname}, detected as '{detected_lang}'")
+                        all_snippets.append({"file": fname, "lang": detected_lang, "code": raw_code, "from_diff": True})
         
         logger.info(f"Found {len(all_snippets)} code snippet(s) across {len(doc_files)} documentation file(s)")
         
@@ -277,7 +321,7 @@ def process_github_webhook(payload: Dict[str, Any]) -> None:
         comment_body = "\n".join(summary_lines)
         
         # Fix #2: Check for existing bot comment and update it instead of creating a duplicate
-        BOT_SIGNATURE = "🤖 **Self-Healing Documentation Engine**"
+        BOT_SIGNATURE = "🏜️ **OASIS"
         existing_comment_id = None
         
         existing_comments_resp = client.get(comments_url, headers=headers)
@@ -478,19 +522,19 @@ def heal_code_snippet(
     confidence = 0.0
     detected_errors = []
     
-    # Step 1: Static analysis (always works, no external dependency)
-    if language.lower() in ("python", "py"):
-        logger.info(f"Running static analysis on {snippet_id}")
-        analysis = analyze_python_code(code)
+    # Step 1: Static analysis (works for all languages, no external dependency)
+    logger.info(f"Running static analysis on {snippet_id} (language: {language})")
+    analysis = analyze_code(code, language)
+    
+    if analysis["has_issues"]:
+        detected_errors = analysis["errors"]
+        method_name = analysis.get("analysis_method", "static")
+        logger.info(f"Static analysis ({method_name}) found {len(detected_errors)} issue(s) in {snippet_id}")
         
-        if analysis["has_issues"]:
-            detected_errors = analysis["errors"]
-            logger.info(f"Static analysis found {len(detected_errors)} issue(s) in {snippet_id}")
-            
-            if analysis["fixed_code"]:
-                healed_code = analysis["fixed_code"]
-                changes.append("Fixed issues detected by static analysis (ast/compile)")
-                confidence = 0.75
+        if analysis.get("fixed_code"):
+            healed_code = analysis["fixed_code"]
+            changes.append(f"Fixed issues detected by static analysis ({method_name})")
+            confidence = 0.75
     
     # Step 2: Try Bedrock AI enhancement (optional - may fail due to billing)
     try:

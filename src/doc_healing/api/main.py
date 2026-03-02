@@ -1,9 +1,12 @@
 """Main FastAPI application."""
 
 import logging
+import os
+from pathlib import Path
 from typing import Dict, Any
 from fastapi import FastAPI, HTTPException, Request
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, HTMLResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from doc_healing.config import get_settings
@@ -19,49 +22,52 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 description = """
-A GitHub/GitLab bot that validates and auto-corrects code snippets in documentation.
+🏜️ **OASIS — Self-Healing Documentation Engine**
 
-## Guide
+A GitHub/GitLab bot that automatically validates and heals broken code snippets in your documentation using hybrid analysis (static + AI).
 
-### 1) Configuration YML File Creation
-To configure the Self-Healing Documentation Engine for your repository, create a `.doc-healing.yml` file in the root of your project.
+---
 
-**Example `.doc-healing.yml`:**
-```yaml
-enabled: true
+## How It Works
 
-documentation:
-  include:
-    - "docs/**/*.md"
-    - "README.md"
-  exclude:
-    - "venv/**"
+1. **Webhook** — GitHub sends a PR event to OASIS
+2. **Analysis** — OASIS extracts code from docs, runs static analysis (AST, compile, heuristics)
+3. **AI Healing** — Amazon Bedrock (Claude 3) generates intelligent fix suggestions
+4. **PR Comment** — OASIS posts a detailed report with errors and fixes
 
-languages:
-  python:
-    enabled: true
-    timeout: 30
-```
+## Supported Languages
 
-### 2) Webhook Creation & What is a Webhook
-**What is a Webhook?**
-A webhook is a way for an app to provide other applications with real-time information. In this context, GitHub or GitLab will send HTTP POST requests to this Documentation Engine whenever certain events occur (like a Pull Request), allowing the engine to automatically validate and heal code snippets in your documentation.
+Python, JavaScript, TypeScript, Java, Go, Ruby, Rust, C/C++, PHP, Bash, and more.
 
-**How to create a Webhook:**
-1. Go to your repository settings in GitHub/GitLab.
-2. Navigate to the **Webhooks** section and click **Add webhook**.
-3. Set the **Payload URL** to `http://doc-healing-alb-1100630618.ap-south-1.elb.amazonaws.com/webhooks/github` (or `/webhooks/gitlab`).
-4. Set the **Content type** to `application/json`.
-5. Under **Secret**, use the following token exactly: `MySuperSecretWebhookToken2026!`
-6. Select the events you want to trigger the webhook (e.g., Pull Requests, Pushes).
-7. Save the webhook.
+## Getting Started
+
+1. Add a `.doc-healing.yml` to your repo root
+2. Create a GitHub webhook pointing to `/webhooks/github`
+3. Open a PR — OASIS analyzes it automatically
+
+## Links
+
+- **[Landing Page](/)** — Full documentation with guide, architecture, and live demo
 """
 
+tags_metadata = [
+    {"name": "Webhooks", "description": "Receive and process GitHub/GitLab webhook events"},
+    {"name": "Validation", "description": "Validate code snippets and documentation files"},
+    {"name": "Healing", "description": "Auto-fix broken code using static analysis + Bedrock AI"},
+    {"name": "Health", "description": "Service health and status endpoints"},
+]
+
 app = FastAPI(
-    title="Self-Healing Documentation Engine",
+    title="🏜️ OASIS — Self-Healing Documentation Engine",
     description=description,
     version="0.1.0",
+    openapi_tags=tags_metadata,
 )
+
+# Mount static files (CSS, JS)
+static_dir = Path(__file__).parent / "static"
+if static_dir.exists():
+    app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
 
 
 # Request/Response Models
@@ -134,10 +140,13 @@ async def startup_event():
     log_memory_usage(context="server_startup")
 
 
-@app.get("/")
-async def root() -> dict[str, str]:
-    """Root endpoint."""
-    return {"message": "Self-Healing Documentation Engine API", "version": "0.1.0"}
+@app.get("/", response_class=HTMLResponse)
+async def root():
+    """Serve the OASIS landing page."""
+    index_path = Path(__file__).parent / "static" / "index.html"
+    if index_path.exists():
+        return HTMLResponse(content=index_path.read_text(encoding="utf-8"), status_code=200)
+    return HTMLResponse(content="<h1>OASIS — Self-Healing Documentation Engine</h1><p>Static files not found.</p>", status_code=200)
 
 
 @app.get("/health")
@@ -386,3 +395,47 @@ async def heal_file(request: FileHealingRequest) -> TaskResponse:
         logger.error(f"Failed to enqueue file healing: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to enqueue healing: {str(e)}")
 
+
+# Live Analysis Endpoint (synchronous — used by the landing page demo)
+
+class AnalyzeRequest(BaseModel):
+    """Request model for real-time code analysis."""
+    code: str
+    language: str = "unknown"
+
+class AnalyzeResponse(BaseModel):
+    """Response model for real-time code analysis."""
+    language: str
+    has_issues: bool
+    errors: list
+
+@app.post("/api/analyze", response_model=AnalyzeResponse, tags=["Validation"])
+async def analyze_code_endpoint(request: AnalyzeRequest) -> AnalyzeResponse:
+    """Analyze a code snippet in real-time using OASIS static analyzers.
+    
+    This endpoint runs the same static analysis pipeline used during
+    PR processing, but returns results synchronously. Used by the 
+    landing page live demo.
+    """
+    from doc_healing.llm.static_analyzer import analyze_code, detect_language
+    
+    code = request.code.strip()
+    language = request.language.strip().lower()
+    
+    if not code:
+        return AnalyzeResponse(language="unknown", has_issues=False, errors=[])
+    
+    # Auto-detect language if needed
+    if language in ("unknown", "auto", ""):
+        language = detect_language(code)
+    
+    # Run the real static analyzer
+    result = analyze_code(code, language)
+    
+    errors = result.get("errors", [])
+    
+    return AnalyzeResponse(
+        language=language,
+        has_issues=len(errors) > 0,
+        errors=errors
+    )
