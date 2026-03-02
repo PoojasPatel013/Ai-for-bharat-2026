@@ -11,6 +11,7 @@ from typing import Any, Dict, Optional
 from doc_healing.queue.factory import get_queue_backend
 from doc_healing.llm.bedrock_client import BedrockLLMClient
 from doc_healing.llm.prompts import build_healing_prompt, HEALING_SYSTEM_PROMPT
+from doc_healing.llm.static_analyzer import analyze_python_code, format_errors_markdown
 
 logger = logging.getLogger(__name__)
 
@@ -87,7 +88,7 @@ def process_github_webhook(payload: Dict[str, Any]) -> None:
         
         # Step 2: Build PR summary
         summary_lines = [
-            f"🤖 **Self-Healing Documentation Engine** analyzed PR #{pr_number}\n",
+            f"🤖 **Self-Healing Documentation Engine** — _Powered by Amazon Bedrock_ — analyzed PR #{pr_number}\n",
             f"### 📊 PR Summary",
             f"| Category | Count |",
             f"|---|---|",
@@ -160,12 +161,34 @@ def process_github_webhook(payload: Dict[str, Any]) -> None:
                 
                 healed = result.get("healed", False)
                 healed_code = result.get("healed_code", "")
+                static_errors = result.get("static_errors", [])
+                changes = result.get("changes", [])
+                
+                # Build error details
+                error_detail = ""
+                if static_errors:
+                    error_detail = "\n\n**🔍 Detected issues:**\n"
+                    for e in static_errors:
+                        icon = {"SyntaxError": "🔴", "TypeError": "🟡"}.get(e["type"], "⚠️")
+                        error_detail += f"- {icon} **{e['type']}**: {e['message']}\n"
+                
+                method = ""
+                if changes:
+                    method = "\n\n_Analysis: " + " + ".join(changes) + "_"
                 
                 if healed and healed_code and healed_code.strip() != code.strip():
                     snippet_results.append(
                         f"### 🔧 Issue found in `{fname}` ({lang})\n\n"
-                        f"**Original code:**\n```{lang}\n{code}\n```\n\n"
+                        f"**Original code:**\n```{lang}\n{code}\n```"
+                        f"{error_detail}\n\n"
                         f"**✨ Suggested fix:**\n```{lang}\n{healed_code.strip()}\n```"
+                        f"{method}"
+                    )
+                elif static_errors:
+                    snippet_results.append(
+                        f"### ⚠️ Issues detected in `{fname}` ({lang})\n"
+                        f"```{lang}\n{code}\n```"
+                        f"{error_detail}"
                     )
                 else:
                     snippet_results.append(
@@ -439,92 +462,71 @@ def heal_code_snippet(
     language: str,
     errors: list
 ) -> Dict[str, Any]:
-    """Attempt to heal/fix a code snippet that failed validation.
+    """Heal a code snippet using static analysis + optional Bedrock AI.
     
-    This task uses AI/heuristics to automatically fix code snippets that
-    failed validation. It returns the healed code and a description of
-    the changes made.
-    
-    Args:
-        file_path: Path to the documentation file containing the snippet
-        snippet_id: Unique identifier for the code snippet
-        code: The original code snippet that failed validation
-        language: Programming language of the snippet
-        errors: List of validation errors to fix
-        
-    Returns:
-        Dictionary containing healing results with keys:
-        - healed: Boolean indicating if healing was successful
-        - healed_code: The fixed code (if successful)
-        - changes: Description of changes made
-        - confidence: Confidence score (0-1) in the healing
-        
-    Raises:
-        ValueError: If required parameters are missing or invalid
+    Uses a hybrid approach:
+    1. Static analysis (ast/compile) for reliable bug detection
+    2. Amazon Bedrock AI for enhanced suggestions (when available)
     """
     logger.info(f"Healing code snippet {snippet_id} from {file_path}")
-    logger.debug(f"Language: {language}, Errors: {len(errors)}")
     
-    # Validate inputs
     if not file_path or not snippet_id or not code or not language:
         raise ValueError("All parameters (file_path, snippet_id, code, language) are required")
     
-    if not errors:
-        logger.warning("No errors provided for healing")
-        return {
-            "healed": False,
-            "healed_code": None,
-            "changes": [],
-            "confidence": 0.0,
-            "snippet_id": snippet_id,
-            "file_path": file_path,
-        }
+    changes = []
+    healed_code = None
+    confidence = 0.0
+    detected_errors = []
     
-    # Get queue backend (for potential re-validation after healing)
-    queue = get_queue_backend()
-    
-    # Use Bedrock Client to heal the code
-    try:
-        client = BedrockLLMClient()
-        prompt = build_healing_prompt(original_code=code, error_log=str(errors), language=language)
-        healed_code = client.generate_correction(prompt=prompt, system_prompt=HEALING_SYSTEM_PROMPT)
+    # Step 1: Static analysis (always works, no external dependency)
+    if language.lower() in ("python", "py"):
+        logger.info(f"Running static analysis on {snippet_id}")
+        analysis = analyze_python_code(code)
         
-        if healed_code and healed_code != code:
-            logger.info(f"Successfully healed code snippet {snippet_id}")
-            result = {
-                "healed": True,
-                "healed_code": healed_code,
-                "changes": ["Fixed validation errors using Claude 3 via Bedrock"],
-                "confidence": 0.85,
-                "snippet_id": snippet_id,
-                "file_path": file_path,
-            }
+        if analysis["has_issues"]:
+            detected_errors = analysis["errors"]
+            logger.info(f"Static analysis found {len(detected_errors)} issue(s) in {snippet_id}")
             
-            # Enqueue validation task for the healed code
-            # queue.enqueue("validation", validate_code_snippet, 
-            #               file_path, snippet_id, healed_code, language)
-        else:
-            logger.warning(f"Failed to heal code snippet {snippet_id}")
-            result = {
-                "healed": False,
-                "healed_code": None,
-                "changes": [],
-                "confidence": 0.0,
-                "snippet_id": snippet_id,
-                "file_path": file_path,
-            }
-    except Exception as e:
-        logger.error(f"Error during code healing: {str(e)}")
-        result = {
-            "healed": False,
-            "healed_code": None,
-            "changes": [],
-            "confidence": 0.0,
-            "snippet_id": snippet_id,
-            "file_path": file_path,
-        }
+            if analysis["fixed_code"]:
+                healed_code = analysis["fixed_code"]
+                changes.append("Fixed issues detected by static analysis (ast/compile)")
+                confidence = 0.75
     
-    logger.info(f"Code snippet {snippet_id} healing complete: healed={result['healed']}")
+    # Step 2: Try Bedrock AI enhancement (optional - may fail due to billing)
+    try:
+        error_context = str(errors)
+        if detected_errors:
+            error_context += "\n\nStatic analysis found: " + "; ".join(
+                e["message"] for e in detected_errors
+            )
+        
+        client = BedrockLLMClient()
+        prompt = build_healing_prompt(original_code=code, error_log=error_context, language=language)
+        ai_code = client.generate_correction(prompt=prompt, system_prompt=HEALING_SYSTEM_PROMPT)
+        
+        if ai_code and ai_code.strip() != code.strip():
+            healed_code = ai_code
+            changes.append("Enhanced fix using Claude 3 via Amazon Bedrock")
+            confidence = 0.90
+            logger.info(f"Bedrock AI provided enhanced fix for {snippet_id}")
+    except Exception as e:
+        logger.warning(f"Bedrock AI unavailable for {snippet_id}: {str(e)[:100]}")
+        # Static analysis result is still used if available
+    
+    # Build result
+    healed = bool(healed_code and healed_code.strip() != code.strip())
+    
+    result = {
+        "healed": healed,
+        "healed_code": healed_code if healed else None,
+        "changes": changes if healed else [],
+        "confidence": confidence if healed else 0.0,
+        "snippet_id": snippet_id,
+        "file_path": file_path,
+        "static_errors": detected_errors,
+    }
+    
+    logger.info(f"Code snippet {snippet_id} healing complete: healed={healed}, errors_found={len(detected_errors)}")
     return result
 
 
