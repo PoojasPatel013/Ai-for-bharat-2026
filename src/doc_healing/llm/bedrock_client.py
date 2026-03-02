@@ -3,18 +3,19 @@ import logging
 from typing import Optional
 import boto3
 from botocore.exceptions import ClientError
+from doc_healing.config import get_settings
 
 logger = logging.getLogger(__name__)
 
 class BedrockLLMClient:
-    def __init__(self, region_name: str = "us-east-1"):
+    def __init__(self, region_name: str = "ap-south-1"):
         """Initialize the Bedrock client."""
+        settings = get_settings()
+        
         # In production this will pick up credentials from the environment or EC2/ECS role.
         self.client = boto3.client(service_name='bedrock-runtime', region_name=region_name)
-        # Default to Claude 3.5 Sonnet for complex code tasks
-        self.default_model_id = "anthropic.claude-3-5-sonnet-20240620-v1:0"
-        # Fallback to Claude 3 Haiku for faster/cheaper queries or if Sonnet fails
-        self.fallback_model_id = "anthropic.claude-3-haiku-20240307-v1:0"
+        self.default_model_id = settings.bedrock_model_id
+        self.fallback_model_id = settings.bedrock_fallback_model_id
 
     def generate_correction(self, prompt: str, system_prompt: str, use_fallback: bool = False) -> Optional[str]:
         """
@@ -56,7 +57,8 @@ class BedrockLLMClient:
             
         except ClientError as e:
             error_code = e.response.get('Error', {}).get('Code')
-            logger.error(f"Bedrock API error: {e} (Code: {error_code})")
+            error_message = e.response.get('Error', {}).get('Message')
+            logger.error(f"Bedrock API error: {e} (Code: {error_code}, Message: {error_message})")
             
             # Try fallback if not already using it and it's a transient or capacity error (e.g. ThrottlingException)
             if not use_fallback and error_code in ['ThrottlingException', 'ModelStreamErrorException', 'InternalServerException']:
