@@ -37,45 +37,76 @@ def process_github_webhook(payload: Dict[str, Any]) -> None:
         comments_url = issue_url + "/comments" if issue_url else None
         
         logger.info(f"Processing PR #{pr_number} for {repo_full_name}")
+        logger.info(f"Comments URL: {comments_url}")
         
         settings = get_settings()
         headers = {"Accept": "application/vnd.github.v3+json"}
         if settings.github_token:
             headers["Authorization"] = f"token {settings.github_token}"
+            logger.info("GitHub token is configured")
+        else:
+            logger.warning("No GITHUB_TOKEN found in settings!")
             
         head_sha = pull_request.get("head", {}).get("sha")
         
         if head_sha and repo_full_name and comments_url:
             readme_url = f"https://raw.githubusercontent.com/{repo_full_name}/{head_sha}/README.md"
-            with httpx.Client() as client:
+            with httpx.Client(timeout=30.0) as client:
                 resp = client.get(readme_url)
                 
                 if resp.status_code == 200:
                     content = resp.text
-                    code_blocks = re.findall(r'```python\n(.*?)\n```', content, re.DOTALL)
+                    # Normalize line endings to \n
+                    content = content.replace('\r\n', '\n')
+                    
+                    # Match code blocks: both closed ```python...``` and unclosed ```python...(EOF)
+                    code_blocks = re.findall(r'```python\s*\n(.*?)(?:\n```|$)', content, re.DOTALL)
+                    logger.info(f"Found {len(code_blocks)} Python code block(s) in README.md")
                     
                     healed_comments = []
                     for idx, code in enumerate(code_blocks):
-                        # For demonstration, simulate an error trigger if the code seems broken
-                        # or just run the AI healer directly.
-                        result = heal_code_snippet("README.md", f"snippet-{idx}", code, "python", ["Validation failed: Please ensure code is correct."])
+                        code = code.strip()
+                        if not code:
+                            continue
+                        logger.info(f"Processing code block {idx}: {code[:80]}...")
                         
-                        if result.get("healed") and result.get("healed_code") and result.get("healed_code").strip() != code.strip():
+                        try:
+                            result = heal_code_snippet("README.md", f"snippet-{idx}", code, "python", ["Validation failed: Please ensure code is correct."])
+                            logger.info(f"Heal result for snippet-{idx}: healed={result.get('healed')}, has_code={bool(result.get('healed_code'))}")
+                            
+                            if result.get("healed") and result.get("healed_code"):
+                                healed_code = result["healed_code"].strip()
+                                healed_comments.append(
+                                    f"### 📋 Code Snippet #{idx + 1}\n\n"
+                                    f"**Original code:**\n\n```python\n{code}\n```\n\n"
+                                    f"**✨ Healed Code:**\n\n```python\n{healed_code}\n```"
+                                )
+                            else:
+                                healed_comments.append(
+                                    f"### 📋 Code Snippet #{idx + 1}\n\n"
+                                    f"```python\n{code}\n```\n\n"
+                                    f"✅ This snippet looks correct!"
+                                )
+                        except Exception as e:
+                            logger.error(f"Error healing snippet {idx}: {e}")
                             healed_comments.append(
-                                f"**Found broken code snippet:**\n\n```python\n{code}\n```\n\n"
-                                f"**✨ Healed Code:**\n\n```python\n{result['healed_code']}\n```"
+                                f"### 📋 Code Snippet #{idx + 1}\n\n"
+                                f"```python\n{code}\n```\n\n"
+                                f"⚠️ Could not analyze this snippet: {str(e)[:100]}"
                             )
                     
+                    # Always post a comment on the PR
                     if healed_comments:
                         comment_body = "🤖 **Self-Healing Documentation Engine** has analyzed your pull request!\n\n" + "\n\n---\n\n".join(healed_comments)
-                        
-                        if settings.github_token:
-                            post_resp = client.post(comments_url, json={"body": comment_body}, headers=headers)
-                            logger.info(f"Posted PR comment: {post_resp.status_code} - {post_resp.text}")
-                        else:
-                            logger.warning("No GITHUB_TOKEN configured, cannot post PR comment.")
                     else:
-                        logger.info("No broken code snippets needed healing in README.md")
+                        comment_body = "🤖 **Self-Healing Documentation Engine** has analyzed your pull request!\n\n✅ No Python code snippets were found in README.md, or all snippets are valid."
+                    
+                    if settings.github_token:
+                        logger.info(f"Posting comment to {comments_url}")
+                        post_resp = client.post(comments_url, json={"body": comment_body}, headers=headers)
+                        logger.info(f"GitHub API response: {post_resp.status_code} - {post_resp.text[:200]}")
+                    else:
+                        logger.warning("No GITHUB_TOKEN configured, cannot post PR comment.")
                 else:
                     logger.warning(f"Failed to fetch README.md for PR {pr_number}: {resp.status_code}")
 
