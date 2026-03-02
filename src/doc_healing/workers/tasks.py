@@ -16,100 +16,189 @@ logger = logging.getLogger(__name__)
 
 
 def process_github_webhook(payload: Dict[str, Any]) -> None:
-    """Process a GitHub webhook event and post a PR comment."""
+    """Process a GitHub webhook event: analyze PR diffs and post healing comments."""
     logger.info("Processing GitHub webhook")
     
     import httpx
     from doc_healing.config import get_settings
     import re
     
-    # Validate payload structure
     if not isinstance(payload, dict):
         raise ValueError("Webhook payload must be a dictionary")
     
     action = payload.get("action")
     pull_request = payload.get("pull_request")
     
-    if action in ["opened", "synchronize", "reopened"] and pull_request:
-        pr_number = pull_request.get("number")
-        repo_full_name = payload.get("repository", {}).get("full_name")
-        issue_url = pull_request.get("issue_url")
-        comments_url = issue_url + "/comments" if issue_url else None
+    if action not in ["opened", "synchronize", "reopened"] or not pull_request:
+        logger.info("GitHub webhook processed successfully")
+        return
+    
+    pr_number = pull_request.get("number")
+    repo_full_name = payload.get("repository", {}).get("full_name")
+    issue_url = pull_request.get("issue_url")
+    comments_url = issue_url + "/comments" if issue_url else None
+    pr_title = pull_request.get("title", "Untitled")
+    head_sha = pull_request.get("head", {}).get("sha")
+    pr_url = pull_request.get("html_url", "")
+    
+    logger.info(f"Processing PR #{pr_number} '{pr_title}' for {repo_full_name}")
+    
+    settings = get_settings()
+    headers = {"Accept": "application/vnd.github.v3+json"}
+    if settings.github_token:
+        headers["Authorization"] = f"token {settings.github_token}"
+        logger.info("GitHub token is configured")
+    else:
+        logger.warning("No GITHUB_TOKEN found in settings!")
+        return
+    
+    if not (head_sha and repo_full_name and comments_url):
+        logger.warning("Missing head_sha, repo_full_name, or comments_url")
+        return
+    
+    DOC_EXTENSIONS = {".md", ".rst", ".txt", ".mdx"}
+    SUPPORTED_LANGS = {"python", "javascript", "js", "java", "bash", "sh", "typescript", "ts",
+                       "go", "ruby", "rust", "c", "cpp", "csharp", "cs", "php", "sql", "yaml", "json", "html", "css"}
+    
+    with httpx.Client(timeout=30.0) as client:
+        # Step 1: Get changed files via GitHub PR Files API
+        files_url = f"https://api.github.com/repos/{repo_full_name}/pulls/{pr_number}/files"
+        files_resp = client.get(files_url, headers=headers)
         
-        logger.info(f"Processing PR #{pr_number} for {repo_full_name}")
-        logger.info(f"Comments URL: {comments_url}")
+        if files_resp.status_code != 200:
+            logger.error(f"Failed to fetch PR files: {files_resp.status_code}")
+            return
         
-        settings = get_settings()
-        headers = {"Accept": "application/vnd.github.v3+json"}
-        if settings.github_token:
-            headers["Authorization"] = f"token {settings.github_token}"
-            logger.info("GitHub token is configured")
-        else:
-            logger.warning("No GITHUB_TOKEN found in settings!")
+        changed_files = files_resp.json()
+        logger.info(f"PR #{pr_number} has {len(changed_files)} changed file(s)")
+        
+        # Categorize files
+        doc_files = []
+        code_files = []
+        other_files = []
+        for f in changed_files:
+            fname = f.get("filename", "")
+            if any(fname.endswith(ext) for ext in DOC_EXTENSIONS):
+                doc_files.append(f)
+            elif any(fname.endswith(ext) for ext in [".py", ".js", ".ts", ".java", ".go", ".rb", ".rs", ".c", ".cpp", ".php"]):
+                code_files.append(f)
+            else:
+                other_files.append(f)
+        
+        # Step 2: Build PR summary
+        summary_lines = [
+            f"🤖 **Self-Healing Documentation Engine** analyzed PR #{pr_number}\n",
+            f"### 📊 PR Summary",
+            f"| Category | Count |",
+            f"|---|---|",
+            f"| 📝 Documentation files | {len(doc_files)} |",
+            f"| 💻 Code files | {len(code_files)} |",
+            f"| 📁 Other files | {len(other_files)} |",
+            f"| **Total changed** | **{len(changed_files)}** |",
+            "",
+        ]
+        
+        if doc_files:
+            summary_lines.append("### 📝 Changed Documentation Files")
+            for f in doc_files:
+                status_icon = {"added": "🆕", "modified": "✏️", "removed": "🗑️"}.get(f.get("status", ""), "📄")
+                summary_lines.append(f"- {status_icon} `{f['filename']}` (+{f.get('additions', 0)}/-{f.get('deletions', 0)})")
+            summary_lines.append("")
+        
+        if code_files:
+            summary_lines.append("### 💻 Changed Code Files")
+            for f in code_files:
+                status_icon = {"added": "🆕", "modified": "✏️", "removed": "🗑️"}.get(f.get("status", ""), "📄")
+                summary_lines.append(f"- {status_icon} `{f['filename']}` (+{f.get('additions', 0)}/-{f.get('deletions', 0)})")
+            summary_lines.append("")
+        
+        # Step 3: For each doc file, fetch content, extract code blocks, and heal
+        all_snippets = []
+        
+        for doc_file in doc_files:
+            fname = doc_file.get("filename", "")
+            status = doc_file.get("status", "")
             
-        head_sha = pull_request.get("head", {}).get("sha")
+            if status == "removed":
+                continue
+            
+            raw_url = f"https://raw.githubusercontent.com/{repo_full_name}/{head_sha}/{fname}"
+            doc_resp = client.get(raw_url)
+            
+            if doc_resp.status_code != 200:
+                logger.warning(f"Could not fetch {fname}: {doc_resp.status_code}")
+                continue
+            
+            content = doc_resp.text.replace('\r\n', '\n')
+            
+            # Extract code blocks with any language tag
+            pattern = r'```(\w+)\s*\n(.*?)(?:\n```|$)'
+            matches = re.findall(pattern, content, re.DOTALL)
+            
+            for lang, code in matches:
+                code = code.strip()
+                if not code or lang.lower() not in SUPPORTED_LANGS:
+                    continue
+                all_snippets.append({"file": fname, "lang": lang.lower(), "code": code})
         
-        if head_sha and repo_full_name and comments_url:
-            readme_url = f"https://raw.githubusercontent.com/{repo_full_name}/{head_sha}/README.md"
-            with httpx.Client(timeout=30.0) as client:
-                resp = client.get(readme_url)
+        logger.info(f"Found {len(all_snippets)} code snippet(s) across {len(doc_files)} documentation file(s)")
+        
+        # Step 4: Heal snippets
+        snippet_results = []
+        for idx, snippet in enumerate(all_snippets):
+            code = snippet["code"]
+            lang = snippet["lang"]
+            fname = snippet["file"]
+            
+            logger.info(f"Analyzing snippet {idx} ({lang}) from {fname}")
+            
+            try:
+                result = heal_code_snippet(
+                    fname, f"snippet-{idx}", code, lang,
+                    ["Please review this code snippet for bugs, missing arguments, type errors, or syntax issues."]
+                )
                 
-                if resp.status_code == 200:
-                    content = resp.text
-                    # Normalize line endings to \n
-                    content = content.replace('\r\n', '\n')
-                    
-                    # Match code blocks: both closed ```python...``` and unclosed ```python...(EOF)
-                    code_blocks = re.findall(r'```python\s*\n(.*?)(?:\n```|$)', content, re.DOTALL)
-                    logger.info(f"Found {len(code_blocks)} Python code block(s) in README.md")
-                    
-                    healed_comments = []
-                    for idx, code in enumerate(code_blocks):
-                        code = code.strip()
-                        if not code:
-                            continue
-                        logger.info(f"Processing code block {idx}: {code[:80]}...")
-                        
-                        try:
-                            result = heal_code_snippet("README.md", f"snippet-{idx}", code, "python", ["Validation failed: Please ensure code is correct."])
-                            logger.info(f"Heal result for snippet-{idx}: healed={result.get('healed')}, has_code={bool(result.get('healed_code'))}")
-                            
-                            if result.get("healed") and result.get("healed_code"):
-                                healed_code = result["healed_code"].strip()
-                                healed_comments.append(
-                                    f"### 📋 Code Snippet #{idx + 1}\n\n"
-                                    f"**Original code:**\n\n```python\n{code}\n```\n\n"
-                                    f"**✨ Healed Code:**\n\n```python\n{healed_code}\n```"
-                                )
-                            else:
-                                healed_comments.append(
-                                    f"### 📋 Code Snippet #{idx + 1}\n\n"
-                                    f"```python\n{code}\n```\n\n"
-                                    f"✅ This snippet looks correct!"
-                                )
-                        except Exception as e:
-                            logger.error(f"Error healing snippet {idx}: {e}")
-                            healed_comments.append(
-                                f"### 📋 Code Snippet #{idx + 1}\n\n"
-                                f"```python\n{code}\n```\n\n"
-                                f"⚠️ Could not analyze this snippet: {str(e)[:100]}"
-                            )
-                    
-                    # Always post a comment on the PR
-                    if healed_comments:
-                        comment_body = "🤖 **Self-Healing Documentation Engine** has analyzed your pull request!\n\n" + "\n\n---\n\n".join(healed_comments)
-                    else:
-                        comment_body = "🤖 **Self-Healing Documentation Engine** has analyzed your pull request!\n\n✅ No Python code snippets were found in README.md, or all snippets are valid."
-                    
-                    if settings.github_token:
-                        logger.info(f"Posting comment to {comments_url}")
-                        post_resp = client.post(comments_url, json={"body": comment_body}, headers=headers)
-                        logger.info(f"GitHub API response: {post_resp.status_code} - {post_resp.text[:200]}")
-                    else:
-                        logger.warning("No GITHUB_TOKEN configured, cannot post PR comment.")
+                healed = result.get("healed", False)
+                healed_code = result.get("healed_code", "")
+                
+                if healed and healed_code and healed_code.strip() != code.strip():
+                    snippet_results.append(
+                        f"### 🔧 Issue found in `{fname}` ({lang})\n\n"
+                        f"**Original code:**\n```{lang}\n{code}\n```\n\n"
+                        f"**✨ Suggested fix:**\n```{lang}\n{healed_code.strip()}\n```"
+                    )
                 else:
-                    logger.warning(f"Failed to fetch README.md for PR {pr_number}: {resp.status_code}")
-
+                    snippet_results.append(
+                        f"### ✅ `{fname}` — Snippet #{idx + 1} ({lang})\n"
+                        f"```{lang}\n{code}\n```\n"
+                        f"No issues detected."
+                    )
+            except Exception as e:
+                logger.error(f"Error healing snippet {idx}: {e}")
+                snippet_results.append(
+                    f"### ⚠️ `{fname}` — Snippet #{idx + 1} ({lang})\n"
+                    f"```{lang}\n{code}\n```\n"
+                    f"Could not analyze: `{str(e)[:80]}`"
+                )
+        
+        # Step 5: Build and post comment
+        if snippet_results:
+            summary_lines.append("### 🔬 Code Snippet Analysis")
+            summary_lines.append("")
+            summary_lines.extend(snippet_results)
+        else:
+            if doc_files:
+                summary_lines.append("### 🔬 Code Snippet Analysis\n")
+                summary_lines.append("No code snippets found in the changed documentation files.\n")
+            else:
+                summary_lines.append("ℹ️ No documentation files were modified in this PR.\n")
+        
+        comment_body = "\n".join(summary_lines)
+        
+        logger.info(f"Posting comment to {comments_url}")
+        post_resp = client.post(comments_url, json={"body": comment_body}, headers=headers)
+        logger.info(f"GitHub API response: {post_resp.status_code}")
+    
     logger.info("GitHub webhook processed successfully")
 
 
