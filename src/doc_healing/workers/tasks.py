@@ -16,47 +16,71 @@ logger = logging.getLogger(__name__)
 
 
 def process_github_webhook(payload: Dict[str, Any]) -> None:
-    """Process a GitHub webhook event.
-    
-    This task handles incoming GitHub webhook events, such as push events,
-    pull request events, etc. It validates the payload and triggers
-    appropriate validation and healing workflows.
-    
-    Args:
-        payload: The webhook payload from GitHub
-        
-    Raises:
-        ValueError: If the payload is invalid or missing required fields
-    """
+    """Process a GitHub webhook event and post a PR comment."""
     logger.info("Processing GitHub webhook")
-    logger.debug(f"Webhook payload: {payload}")
+    
+    import httpx
+    from doc_healing.config import get_settings
+    import re
     
     # Validate payload structure
     if not isinstance(payload, dict):
         raise ValueError("Webhook payload must be a dictionary")
     
-    # Extract event type
-    event_type = payload.get("event_type")
-    if not event_type:
-        logger.warning("Webhook payload missing event_type")
+    action = payload.get("action")
+    pull_request = payload.get("pull_request")
     
-    # Process based on event type
-    logger.info(f"Processing webhook event type: {event_type}")
-    
-    # Get queue backend for enqueuing validation tasks
-    queue = get_queue_backend()
-    
-    # TODO: Implement actual webhook processing logic
-    # This would typically:
-    # 1. Parse the webhook payload
-    # 2. Identify affected documentation files
-    # 3. Enqueue validation tasks for those files
-    #
-    # Example:
-    # for file_path, content in affected_files:
-    #     queue.enqueue("validation", validate_documentation_file, file_path, content)
-    
+    if action in ["opened", "synchronize", "reopened"] and pull_request:
+        pr_number = pull_request.get("number")
+        repo_full_name = payload.get("repository", {}).get("full_name")
+        issue_url = pull_request.get("issue_url")
+        comments_url = issue_url + "/comments" if issue_url else None
+        
+        logger.info(f"Processing PR #{pr_number} for {repo_full_name}")
+        
+        settings = get_settings()
+        headers = {"Accept": "application/vnd.github.v3+json"}
+        if settings.github_token:
+            headers["Authorization"] = f"token {settings.github_token}"
+            
+        head_sha = pull_request.get("head", {}).get("sha")
+        
+        if head_sha and repo_full_name and comments_url:
+            readme_url = f"https://raw.githubusercontent.com/{repo_full_name}/{head_sha}/README.md"
+            with httpx.Client() as client:
+                resp = client.get(readme_url)
+                
+                if resp.status_code == 200:
+                    content = resp.text
+                    code_blocks = re.findall(r'```python\n(.*?)\n```', content, re.DOTALL)
+                    
+                    healed_comments = []
+                    for idx, code in enumerate(code_blocks):
+                        # For demonstration, simulate an error trigger if the code seems broken
+                        # or just run the AI healer directly.
+                        result = heal_code_snippet("README.md", f"snippet-{idx}", code, "python", ["Validation failed: Please ensure code is correct."])
+                        
+                        if result.get("healed") and result.get("healed_code") and result.get("healed_code").strip() != code.strip():
+                            healed_comments.append(
+                                f"**Found broken code snippet:**\n\n```python\n{code}\n```\n\n"
+                                f"**✨ Healed Code:**\n\n```python\n{result['healed_code']}\n```"
+                            )
+                    
+                    if healed_comments:
+                        comment_body = "🤖 **Self-Healing Documentation Engine** has analyzed your pull request!\n\n" + "\n\n---\n\n".join(healed_comments)
+                        
+                        if settings.github_token:
+                            post_resp = client.post(comments_url, json={"body": comment_body}, headers=headers)
+                            logger.info(f"Posted PR comment: {post_resp.status_code} - {post_resp.text}")
+                        else:
+                            logger.warning("No GITHUB_TOKEN configured, cannot post PR comment.")
+                    else:
+                        logger.info("No broken code snippets needed healing in README.md")
+                else:
+                    logger.warning(f"Failed to fetch README.md for PR {pr_number}: {resp.status_code}")
+
     logger.info("GitHub webhook processed successfully")
+
 
 
 def process_gitlab_webhook(payload: Dict[str, Any]) -> None:

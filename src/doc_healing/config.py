@@ -59,6 +59,9 @@ class Settings(BaseSettings):
     bedrock_model_id: str = "anthropic.claude-3-5-sonnet-20240620-v1:0"
     bedrock_fallback_model_id: str = "anthropic.claude-3-haiku-20240307-v1:0"
 
+    # GitHub integration
+    github_token: Optional[str] = None
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_prefix="DOC_HEALING_",
@@ -101,6 +104,9 @@ def get_settings() -> Settings:
                         
                 if "BEDROCK_MODEL_ID" in aws_secrets:
                     _settings.bedrock_model_id = aws_secrets["BEDROCK_MODEL_ID"]
+
+                if "GITHUB_TOKEN" in aws_secrets:
+                    _settings.github_token = aws_secrets["GITHUB_TOKEN"]
                     
                 logging.getLogger(__name__).info(f"Loaded credentials securely from AWS Secrets Manager: {secret_name}")
             except Exception as e:
