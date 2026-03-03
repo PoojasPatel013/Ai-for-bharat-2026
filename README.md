@@ -20,13 +20,34 @@ The Self-Healing Documentation Engine automatically validates code snippets in d
 
 The system is built as a cloud-native microservices architecture:
 
+![System Architecture](src/doc_healing/api/static/images/architecture.png)
+
 - **API Gateway**: FastAPI-based webhook handler and REST API
 - **Validation Engine**: Sandbox execution (Python) + multi-language static analysis
-- **Healing Engine**: Three-layer approach — sandbox → static analysis → Amazon Bedrock AI
+- **Healing Engine**: 4-layer approach — static analysis → sandbox → Amazon Bedrock AI → diff scanning
 - **Code Mapping Service**: AST-based code-documentation relationship tracking
 - **Queue System**: Redis Queue (RQ) for reliable event processing
 - **Database**: PostgreSQL for persistent storage
 - **Cache**: Redis for caching and rate limiting
+
+### Workflow
+
+![Workflow](src/doc_healing/api/static/images/workflow.png)
+
+### Tech Stack
+
+| Layer | Technology | Purpose |
+|-------|-----------|---------|
+| API | Python 3.11 + FastAPI | Webhook handlers, REST API |
+| Queue | Redis Queue (RQ) | Async task processing (3 queues) |
+| AI | Amazon Bedrock (Claude 3) | Code healing via `boto3` |
+| Sandbox | `subprocess` + `ulimit` | Isolated Python execution (5s timeout, 50MB) |
+| Database | PostgreSQL + SQLAlchemy | Persistent storage (9 tables, Alembic migrations) |
+| Auth | HMAC-SHA256 | Webhook signature verification |
+| Deployment | AWS ECS Fargate + ALB | Container orchestration |
+| Secrets | AWS Secrets Manager | Credential management |
+| CI/CD | GitHub Actions | Build → Test → Deploy |
+
 
 ## Quick Start
 

@@ -120,9 +120,11 @@
           </li>
           <li><strong>Multi-Language Support</strong> — Python, JavaScript, TypeScript, Java, Go, Rust, C/C++, and more
           </li>
+          <li><strong>Sandbox Execution</strong> — Python snippets run in isolated subprocesses with timeout and memory limits
+          </li>
           <li><strong>Auto-Correction</strong> — AI-powered fix suggestions posted as PR comments</li>
           <li><strong>GitHub/GitLab Integration</strong> — Seamless webhook-based bot integration</li>
-          <li><strong>Secure by Design</strong> — HMAC signature verification, no code execution, scoped permissions
+          <li><strong>Secure by Design</strong> — HMAC verification, sandboxed execution, scoped permissions
           </li>
         </ul>
 
@@ -417,6 +419,12 @@ $ git push origin test-oasis</code></pre>
           </div>
         </div>
 
+        <h2>Architecture Diagram</h2>
+        <p>Below is the full system architecture showing how all components interact:</p>
+        <div style="text-align:center;margin:2rem 0">
+          <img src="/static/images/architecture.png" alt="OASIS System Architecture" style="max-width:100%;border-radius:8px;border:1px solid var(--border)" />
+        </div>
+
         <h2>Deployment</h2>
         <table>
           <thead>
@@ -504,7 +512,12 @@ $ git push origin test-oasis</code></pre>
           <div class="flow-line">↓</div>
           <div class="flow-node">9. Post PR comment with errors + suggested fixes</div>
         </div>
-      </article>
+
+        <h2>Workflow Diagram</h2>
+        <p>The complete PR analysis and healing flow:</p>
+        <div style="text-align:center;margin:2rem 0">
+          <img src="/static/images/workflow.png" alt="OASIS Workflow Diagram" style="max-width:100%;border-radius:8px;border:1px solid var(--border)" />
+        </div>
 
       <!-- PAGE: components -->
       <article class="page hidden" id="page-components">
@@ -562,7 +575,7 @@ $ git push origin test-oasis</code></pre>
         <ul>
           <li>HMAC-SHA256 webhook signature verification</li>
           <li>AWS Secrets Manager for credential storage</li>
-          <li>No code execution — analysis is purely static/AI-based</li>
+          <li>Python sandbox: isolated subprocess with 5s timeout, 50MB memory limit, blocked dangerous imports</li>
           <li>Scoped GitHub token permissions (read PRs, write comments)</li>
         </ul>
       </article>
@@ -897,17 +910,25 @@ for node in ast.walk(tree):
         ...</code></pre>
         </div>
 
-        <h2>Layer 2: Amazon Bedrock AI (Optional Enhancement)</h2>
-        <p>When available, OASIS sends the code and static analysis results to Claude 3 via Amazon Bedrock for deeper
-          reasoning. The AI can understand intent, suggest better fixes, and explain problems.</p>
+        <h2>Layer 2: Sandbox Execution (Python)</h2>
+        <p>Python snippets are executed in isolated subprocesses with resource limits. This catches runtime errors
+          that static analysis misses — NameErrors, TypeErrors, infinite loops, and import failures.</p>
         <ul>
-          <li><strong>Not a dependency</strong> — OASIS works perfectly with static analysis alone</li>
-          <li><strong>Graceful fallback</strong> — If Bedrock is unavailable (billing, throttling), static analysis
-            results are used</li>
+          <li><strong>Timeout:</strong> 5 seconds per snippet</li>
+          <li><strong>Memory:</strong> 50MB limit via <code>ulimit</code></li>
+          <li><strong>Blocked imports:</strong> <code>os</code>, <code>subprocess</code>, <code>socket</code>, <code>shutil</code>, etc.</li>
+          <li><strong>Blocked operations:</strong> <code>eval()</code>, <code>exec()</code>, <code>__import__()</code></li>
+        </ul>
+
+        <h2>Layer 3: Amazon Bedrock AI (Always Attempted)</h2>
+        <p>OASIS sends the code, static analysis results, and sandbox errors to Claude 3 via Amazon Bedrock for deeper
+          reasoning. The AI reviews for logic errors, edge cases, performance issues, and subtle bugs.</p>
+        <ul>
+          <li><strong>Graceful fallback</strong> — If Bedrock is unavailable, static + sandbox results are used</li>
           <li><strong>Confidence scoring</strong> — AI fixes get 0.90 confidence vs 0.75 for static-only fixes</li>
         </ul>
 
-        <h2>Layer 3: Diff Scanning (New!)</h2>
+        <h2>Layer 4: Diff Scanning</h2>
         <p>OASIS also scans the raw diff patch of documentation files for code-like patterns outside of fenced code
           blocks. This catches broken code written as plain text.</p>
       </article>
@@ -1016,11 +1037,13 @@ print(greet("Alice"))</textarea>
 
         <h2>What OASIS Does NOT Do</h2>
         <ul>
-          <li>❌ Does not execute your code — all analysis is static or AI-based</li>
+          <li>❌ Does not execute non-Python code — those languages use static + AI analysis only</li>
           <li>❌ Does not store your source code permanently</li>
           <li>❌ Does not have write access to your repository (only posts comments)</li>
           <li>❌ Does not access files outside the PR scope</li>
         </ul>
+        <div class="note"><strong>Note:</strong> Python snippets ARE executed in an isolated sandbox (subprocess with
+          timeout and memory limits), but with dangerous imports blocked and no network access.</div>
 
         <h2>AI Transparency</h2>
         <ul>
