@@ -81,6 +81,19 @@ class TestValidationTasks:
         assert result["language"] == "python"
         assert isinstance(result["errors"], list)
         assert isinstance(result["warnings"], list)
+        assert "sandbox_executed" in result
+
+    def test_validate_code_snippet_detects_syntax_error(self, mock_queue_backend):
+        """Test validation catches broken code."""
+        result = validate_code_snippet(
+            file_path="docs/example.md",
+            snippet_id="snippet-2",
+            code="print('hello'",  # Missing closing paren
+            language="python"
+        )
+        
+        assert result["valid"] is False
+        assert len(result["errors"]) > 0
 
     def test_validate_code_snippet_missing_parameters(self, mock_queue_backend):
         """Test validation with missing parameters."""
@@ -100,10 +113,8 @@ class TestValidationTasks:
         )
         
         assert result["file_path"] == "docs/example.md"
-        assert "snippets_found" in result
-        assert "snippets_valid" in result
-        assert "snippets_invalid" in result
-        assert isinstance(result["errors"], list)
+        assert result["snippets_found"] == 1
+        assert result["status"] == "enqueued"
 
     def test_validate_documentation_file_missing_parameters(self, mock_queue_backend):
         """Test validation with missing parameters."""

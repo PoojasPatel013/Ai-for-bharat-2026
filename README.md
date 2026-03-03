@@ -9,9 +9,10 @@ The Self-Healing Documentation Engine automatically validates code snippets in d
 ## Features
 
 - **Automatic Validation**: Validates all code snippets in documentation on every pull request
-- **Auto-Correction**: AI-powered correction of broken code examples
-- **Multi-Language Support**: Python, JavaScript, TypeScript, Java, Go, Rust
-- **Secure Execution**: Isolated container-based code execution with resource limits
+- **Sandbox Execution**: Runs Python snippets in isolated subprocesses with timeout and memory limits
+- **Auto-Correction**: AI-powered correction of broken code using Amazon Bedrock (Claude 3)
+- **Multi-Language Support**: Python, JavaScript, TypeScript, Java, Go, Ruby, Rust, C/C++, PHP, Bash
+- **Hybrid Analysis**: Static analysis (AST/compile) + runtime execution + AI for deep code review
 - **GitHub/GitLab Integration**: Seamless bot integration with status checks and comments
 - **Code Mapping**: Intelligent tracking of relationships between code and documentation
 
@@ -20,8 +21,8 @@ The Self-Healing Documentation Engine automatically validates code snippets in d
 The system is built as a cloud-native microservices architecture:
 
 - **API Gateway**: FastAPI-based webhook handler and REST API
-- **Validation Engine**: Container-based code execution with multi-language support
-- **Healing Engine**: AI-powered correction generation using OpenAI
+- **Validation Engine**: Sandbox execution (Python) + multi-language static analysis
+- **Healing Engine**: Three-layer approach — sandbox → static analysis → Amazon Bedrock AI
 - **Code Mapping Service**: AST-based code-documentation relationship tracking
 - **Queue System**: Redis Queue (RQ) for reliable event processing
 - **Database**: PostgreSQL for persistent storage
@@ -152,20 +153,20 @@ validation:
 ```
 .
 ├── src/doc_healing/          # Main application code
-│   ├── api/                  # FastAPI application
+│   ├── api/                  # FastAPI application & landing page
 │   ├── db/                   # Database models and configuration
-│   ├── llm/                  # AWS Bedrock/LLM integration 
+│   ├── llm/                  # Static analyzer, sandbox, Bedrock AI
 │   ├── models/               # Shared data models
 │   ├── monitoring/           # Performance/Memory monitoring
-│   └── queue/                # Queue management
+│   ├── queue/                # Queue management (Redis + in-memory)
+│   └── workers/              # Task processing (webhook, validate, heal)
 ├── tests/                    # Test suite
 ├── scripts/                  # Data migration scripts
 ├── alembic/                  # Database migrations
-├── k8s/                      # Kubernetes manifests
+├── deploy/                   # AWS deployment configs
 ├── docker-compose.yml        # Full production setup
 ├── docker-compose.lightweight.yml # Lightweight setup
 └── pyproject.toml           # Project dependencies
-
 ```
 
 ## License

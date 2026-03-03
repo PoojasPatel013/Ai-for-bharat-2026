@@ -12,6 +12,7 @@ from doc_healing.queue.factory import get_queue_backend
 from doc_healing.llm.bedrock_client import BedrockLLMClient
 from doc_healing.llm.prompts import build_healing_prompt, HEALING_SYSTEM_PROMPT
 from doc_healing.llm.static_analyzer import analyze_python_code, analyze_code, detect_language, format_errors_markdown
+from doc_healing.llm.sandbox import execute_code
 
 logger = logging.getLogger(__name__)
 
@@ -87,30 +88,33 @@ def process_github_webhook(payload: Dict[str, Any]) -> None:
                 other_files.append(f)
         
         # Step 2: Build PR summary
+        file_summary_parts = []
+        if doc_files:
+            file_summary_parts.append(f"{len(doc_files)} documentation")
+        if code_files:
+            file_summary_parts.append(f"{len(code_files)} code")
+        if other_files:
+            file_summary_parts.append(f"{len(other_files)} other")
+        file_summary_str = ", ".join(file_summary_parts) + f" file{'s' if len(changed_files) != 1 else ''} changed"
+        
         summary_lines = [
-            f"🏜️ **OASIS — Self-Healing Documentation Engine** — _Powered by Amazon Bedrock_ — analyzed PR #{pr_number}\n",
-            f"### 📊 PR Summary",
-            f"| Category | Count |",
-            f"|---|---|",
-            f"| 📝 Documentation files | {len(doc_files)} |",
-            f"| 💻 Code files | {len(code_files)} |",
-            f"| 📁 Other files | {len(other_files)} |",
-            f"| **Total changed** | **{len(changed_files)}** |",
+            f"## OASIS — Code Analysis Report\n",
+            f"**PR #{pr_number}** · {file_summary_str}\n",
+            "---",
             "",
         ]
         
-        if doc_files:
-            summary_lines.append("### 📝 Changed Documentation Files")
-            for f in doc_files:
-                status_icon = {"added": "🆕", "modified": "✏️", "removed": "🗑️"}.get(f.get("status", ""), "📄")
-                summary_lines.append(f"- {status_icon} `{f['filename']}` (+{f.get('additions', 0)}/-{f.get('deletions', 0)})")
-            summary_lines.append("")
-        
-        if code_files:
-            summary_lines.append("### 💻 Changed Code Files")
-            for f in code_files:
-                status_icon = {"added": "🆕", "modified": "✏️", "removed": "🗑️"}.get(f.get("status", ""), "📄")
-                summary_lines.append(f"- {status_icon} `{f['filename']}` (+{f.get('additions', 0)}/-{f.get('deletions', 0)})")
+        all_listed_files = doc_files + code_files
+        if all_listed_files:
+            summary_lines.append("### Changed Files")
+            summary_lines.append("| File | Type | Status | Changes |")
+            summary_lines.append("|------|------|--------|---------|")
+            for f in all_listed_files:
+                fname = f['filename']
+                fstatus = f.get('status', 'modified')
+                ftype = "doc" if f in doc_files else "code"
+                changes = f"+{f.get('additions', 0)} / -{f.get('deletions', 0)}"
+                summary_lines.append(f"| `{fname}` | {ftype} | {fstatus} | {changes} |")
             summary_lines.append("")
         
         # Step 3: For each doc file, fetch content, extract code blocks, and heal
@@ -211,39 +215,37 @@ def process_github_webhook(payload: Dict[str, Any]) -> None:
                 # Build error details
                 error_detail = ""
                 if static_errors:
-                    error_detail = "\n\n**🔍 Detected issues:**\n"
+                    error_detail = "\n\n**Detected issues:**\n"
                     for e in static_errors:
-                        icon = {"SyntaxError": "🔴", "TypeError": "🟡"}.get(e["type"], "⚠️")
-                        error_detail += f"- {icon} **{e['type']}**: {e['message']}\n"
+                        error_detail += f"- `{e['type']}` — {e['message']}\n"
                 
                 method = ""
                 if changes:
-                    method = "\n\n_Analysis: " + " + ".join(changes) + "_"
+                    method = "\n\n<sub>" + " · ".join(changes) + "</sub>"
                 
                 if healed and healed_code and healed_code.strip() != code.strip():
                     snippet_results.append(
-                        f"### 🔧 Issue found in `{fname}` ({lang})\n\n"
-                        f"**Original code:**\n```{lang}\n{code}\n```"
+                        f"#### `{fname}` — Issues Found\n\n"
+                        f"```{lang}\n{code}\n```"
                         f"{error_detail}\n\n"
-                        f"**✨ Suggested fix:**\n```{lang}\n{healed_code.strip()}\n```"
+                        f"**Suggested fix:**\n```{lang}\n{healed_code.strip()}\n```"
                         f"{method}"
                     )
                 elif static_errors:
                     snippet_results.append(
-                        f"### ⚠️ Issues detected in `{fname}` ({lang})\n"
+                        f"#### `{fname}` — Issues Found\n"
                         f"```{lang}\n{code}\n```"
                         f"{error_detail}"
                     )
                 else:
                     snippet_results.append(
-                        f"### ✅ `{fname}` — Snippet #{idx + 1} ({lang})\n"
-                        f"```{lang}\n{code}\n```\n"
+                        f"#### `{fname}` — Snippet #{idx + 1} ✓\n"
                         f"No issues detected."
                     )
             except Exception as e:
                 logger.error(f"Error healing snippet {idx}: {e}")
                 snippet_results.append(
-                    f"### ⚠️ `{fname}` — Snippet #{idx + 1} ({lang})\n"
+                    f"#### `{fname}` — Snippet #{idx + 1}\n"
                     f"```{lang}\n{code}\n```\n"
                     f"Could not analyze: `{str(e)[:80]}`"
                 )
@@ -295,33 +297,40 @@ def process_github_webhook(payload: Dict[str, Any]) -> None:
                 
                 if healed and healed_code and healed_code.strip() != added_code.strip():
                     snippet_results.append(
-                        f"### 🔧 Issues found in `{fname}`\n\n"
+                        f"#### `{fname}` — Issues Found\n\n"
                         f"**New code added:**\n```{lang}\n{added_code[:500]}\n```\n\n"
-                        f"**✨ Suggested fix:**\n```{lang}\n{healed_code.strip()[:500]}\n```"
+                        f"**Suggested fix:**\n```{lang}\n{healed_code.strip()[:500]}\n```"
                     )
                 else:
                     snippet_results.append(
-                        f"### ✅ `{fname}` — New code looks good!"
+                        f"#### `{fname}` — New code looks good ✓"
                     )
             except Exception as e:
                 logger.error(f"Error analyzing code file {fname}: {e}")
         
         # Step 5: Build and post comment (with duplicate detection)
+        summary_lines.append("---")
+        summary_lines.append("")
         if snippet_results:
-            summary_lines.append("### 🔬 Code Analysis Results")
+            summary_lines.append("### Analysis Results")
             summary_lines.append("")
             summary_lines.extend(snippet_results)
         else:
             if doc_files or code_files:
-                summary_lines.append("### 🔬 Code Analysis Results\n")
-                summary_lines.append("✅ All code looks good — no issues found!\n")
+                summary_lines.append("### Analysis Results\n")
+                summary_lines.append("All code looks good — no issues found. ✓\n")
             else:
-                summary_lines.append("ℹ️ No documentation or code files were modified in this PR.\n")
+                summary_lines.append("No documentation or code files were modified in this PR.\n")
+        
+        # Add branded footer
+        summary_lines.append("")
+        summary_lines.append("---")
+        summary_lines.append("<sub>🏜️ OASIS · Self-Healing Documentation Engine · Powered by Amazon Bedrock</sub>")
         
         comment_body = "\n".join(summary_lines)
         
         # Fix #2: Check for existing bot comment and update it instead of creating a duplicate
-        BOT_SIGNATURE = "🏜️ **OASIS"
+        BOT_SIGNATURE = "OASIS — Code Analysis Report"
         existing_comment_id = None
         
         existing_comments_resp = client.get(comments_url, headers=headers)
@@ -348,44 +357,33 @@ def process_github_webhook(payload: Dict[str, Any]) -> None:
 
 
 def process_gitlab_webhook(payload: Dict[str, Any]) -> None:
-    """Process a GitLab webhook event.
-    
-    This task handles incoming GitLab webhook events, similar to GitHub
-    webhook processing but adapted for GitLab's webhook format.
-    
-    Args:
-        payload: The webhook payload from GitLab
-        
-    Raises:
-        ValueError: If the payload is invalid or missing required fields
-    """
+    """Process a GitLab webhook event."""
     logger.info("Processing GitLab webhook")
-    logger.debug(f"Webhook payload: {payload}")
     
-    # Validate payload structure
     if not isinstance(payload, dict):
         raise ValueError("Webhook payload must be a dictionary")
     
-    # Extract event type
     event_type = payload.get("object_kind")
+    project = payload.get("project", {})
+    project_name = project.get("path_with_namespace", "unknown")
+    
     if not event_type:
         logger.warning("Webhook payload missing object_kind")
     
-    # Process based on event type
-    logger.info(f"Processing webhook event type: {event_type}")
+    logger.info(f"GitLab event: {event_type} for project: {project_name}")
     
-    # Get queue backend for enqueuing validation tasks
-    queue = get_queue_backend()
-    
-    # TODO: Implement actual webhook processing logic
-    # This would typically:
-    # 1. Parse the webhook payload
-    # 2. Identify affected documentation files
-    # 3. Enqueue validation tasks for those files
-    #
-    # Example:
-    # for file_path, content in affected_files:
-    #     queue.enqueue("validation", validate_documentation_file, file_path, content)
+    if event_type in ["push", "merge_request"]:
+        commits = payload.get("commits", [])
+        changed_files = []
+        for commit in commits[:5]:
+            added = commit.get("added", [])
+            modified = commit.get("modified", [])
+            for fp in added + modified:
+                if fp.endswith((".md", ".rst", ".txt")):
+                    changed_files.append(fp)
+        
+        logger.info(f"Found {len(changed_files)} documentation file(s) to validate")
+        # File content would be fetched via GitLab API in production
     
     logger.info("GitLab webhook processed successfully")
 
@@ -424,78 +422,89 @@ def validate_code_snippet(
     if not file_path or not snippet_id or not code or not language:
         raise ValueError("All parameters (file_path, snippet_id, code, language) are required")
     
-    # Get queue backend for enqueuing healing tasks if validation fails
-    queue = get_queue_backend()
+    errors = []
+    warnings = []
     
-    # TODO: Implement actual validation logic
-    # This would typically:
-    # 1. Set up an isolated execution environment
-    # 2. Attempt to compile/execute the code
-    # 3. Capture any errors or warnings
-    # 4. Return structured validation results
-    # 5. If validation fails, enqueue healing task:
-    #    queue.enqueue("healing", heal_code_snippet, file_path, snippet_id, code, language, errors)
+    # Step 1: Static analysis (all languages)
+    analysis = analyze_code(code, language)
+    if analysis["has_issues"]:
+        for e in analysis["errors"]:
+            errors.append(f"{e['type']}: {e['message']}")
     
-    # Placeholder result
+    # Step 2: Sandbox execution (Python only, other languages skip gracefully)
+    sandbox_result = execute_code(code, language)
+    if not sandbox_result.get("skipped"):
+        if not sandbox_result["success"]:
+            err_type = sandbox_result.get("error_type", "RuntimeError")
+            err_msg = sandbox_result.get("error_message", "Unknown execution error")
+            error_str = f"{err_type}: {err_msg}"
+            if error_str not in errors:
+                errors.append(error_str)
+            if sandbox_result.get("timed_out"):
+                warnings.append("Code execution timed out — possible infinite loop")
+        else:
+            logger.info(f"Sandbox execution succeeded for {snippet_id}")
+    else:
+        warnings.append(f"Sandbox execution not available for {language} — validated with static analysis only")
+    
+    valid = len(errors) == 0
+    
+    # Step 3: If validation fails, enqueue healing
+    if not valid:
+        queue = get_queue_backend()
+        try:
+            queue.enqueue("healing", heal_code_snippet,
+                         file_path, snippet_id, code, language, errors)
+            logger.info(f"Enqueued healing task for {snippet_id}")
+        except Exception as e:
+            logger.warning(f"Could not enqueue healing for {snippet_id}: {e}")
+    
     result = {
-        "valid": True,
-        "errors": [],
-        "warnings": [],
+        "valid": valid,
+        "errors": errors,
+        "warnings": warnings,
         "snippet_id": snippet_id,
         "file_path": file_path,
         "language": language,
+        "sandbox_executed": not sandbox_result.get("skipped", True),
     }
     
-    logger.info(f"Code snippet {snippet_id} validation complete: valid={result['valid']}")
+    logger.info(f"Code snippet {snippet_id} validation complete: valid={valid}, errors={len(errors)}")
     return result
 
 
 def validate_documentation_file(file_path: str, content: str) -> Dict[str, Any]:
-    """Validate all code snippets in a documentation file.
+    """Validate all code snippets in a documentation file."""
+    import re
+    import hashlib
     
-    This task extracts and validates all code snippets from a documentation
-    file, returning aggregated validation results.
-    
-    Args:
-        file_path: Path to the documentation file
-        content: Content of the documentation file
-        
-    Returns:
-        Dictionary containing validation results for all snippets
-        
-    Raises:
-        ValueError: If required parameters are missing
-    """
     logger.info(f"Validating documentation file: {file_path}")
     
-    # Validate inputs
     if not file_path or not content:
         raise ValueError("Both file_path and content are required")
     
-    # Get queue backend for enqueuing validation and healing tasks
-    queue = get_queue_backend()
+    # Extract triple-backtick code blocks: ```language\n<code>\n```
+    pattern = re.compile(r"```(\w+)?\n(.*?)\n```", re.DOTALL)
+    matches = pattern.findall(content)
     
-    # TODO: Implement actual file validation logic
-    # This would typically:
-    # 1. Parse the documentation file
-    # 2. Extract all code snippets
-    # 3. Enqueue validation tasks for each snippet:
-    #    for snippet in snippets:
-    #        queue.enqueue("validation", validate_code_snippet, 
-    #                     file_path, snippet.id, snippet.code, snippet.language)
-    # 4. Aggregate results
-    # 5. If any snippets are invalid, enqueue healing task:
-    #    queue.enqueue("healing", heal_documentation_file, file_path, validation_results)
+    queue = get_queue_backend()
+    snippets_found = len(matches)
+    
+    for i, (lang, code) in enumerate(matches):
+        lang = lang.strip() if lang else "unknown"
+        content_hash = hashlib.md5(code.encode()).hexdigest()[:8]
+        snippet_id = f"snippet-{i}-{content_hash}"
+        
+        logger.info(f"Enqueuing validation for {snippet_id} ({lang}) from {file_path}")
+        queue.enqueue("validation", validate_code_snippet, file_path, snippet_id, code, lang)
     
     result = {
         "file_path": file_path,
-        "snippets_found": 0,
-        "snippets_valid": 0,
-        "snippets_invalid": 0,
-        "errors": [],
+        "snippets_found": snippets_found,
+        "status": "enqueued",
     }
     
-    logger.info(f"Documentation file validation complete: {file_path}")
+    logger.info(f"Documentation file {file_path}: {snippets_found} snippets enqueued")
     return result
 
 
@@ -506,11 +515,12 @@ def heal_code_snippet(
     language: str,
     errors: list
 ) -> Dict[str, Any]:
-    """Heal a code snippet using static analysis + optional Bedrock AI.
+    """Heal a code snippet using sandbox execution + static analysis + Bedrock AI.
     
-    Uses a hybrid approach:
-    1. Static analysis (ast/compile) for reliable bug detection
-    2. Amazon Bedrock AI for enhanced suggestions (when available)
+    Uses a three-layer approach:
+    1. Sandbox execution (Python) — catches runtime errors the static analyzer misses
+    2. Static analysis (ast/compile) for reliable bug detection
+    3. Amazon Bedrock AI for complex code that needs deeper understanding
     """
     logger.info(f"Healing code snippet {snippet_id} from {file_path}")
     
@@ -522,7 +532,22 @@ def heal_code_snippet(
     confidence = 0.0
     detected_errors = []
     
-    # Step 1: Static analysis (works for all languages, no external dependency)
+    # Step 1: Sandbox execution (catches runtime errors for Python)
+    sandbox_result = execute_code(code, language)
+    sandbox_errors = []
+    if not sandbox_result.get("skipped") and not sandbox_result["success"]:
+        err_type = sandbox_result.get("error_type", "RuntimeError")
+        err_msg = sandbox_result.get("error_message", "Unknown error")
+        sandbox_errors.append({
+            "type": err_type,
+            "message": err_msg,
+            "line": None,
+            "detail": f"Runtime execution error: {err_msg}",
+            "source": "sandbox",
+        })
+        logger.info(f"Sandbox caught {err_type} in {snippet_id}: {err_msg}")
+    
+    # Step 2: Static analysis (works for all languages, no external dependency)
     logger.info(f"Running static analysis on {snippet_id} (language: {language})")
     analysis = analyze_code(code, language)
     
@@ -533,29 +558,54 @@ def heal_code_snippet(
         
         if analysis.get("fixed_code"):
             healed_code = analysis["fixed_code"]
-            changes.append(f"Fixed issues detected by static analysis ({method_name})")
+            changes.append(f"Fixed issues via static analysis ({method_name})")
             confidence = 0.75
     
-    # Step 2: Try Bedrock AI enhancement (optional - may fail due to billing)
-    try:
-        error_context = str(errors)
-        if detected_errors:
-            error_context += "\n\nStatic analysis found: " + "; ".join(
-                e["message"] for e in detected_errors
-            )
-        
-        client = BedrockLLMClient()
-        prompt = build_healing_prompt(original_code=code, error_log=error_context, language=language)
-        ai_code = client.generate_correction(prompt=prompt, system_prompt=HEALING_SYSTEM_PROMPT)
-        
-        if ai_code and ai_code.strip() != code.strip():
-            healed_code = ai_code
-            changes.append("Enhanced fix using Claude 3 via Amazon Bedrock")
-            confidence = 0.90
-            logger.info(f"Bedrock AI provided enhanced fix for {snippet_id}")
-    except Exception as e:
-        logger.warning(f"Bedrock AI unavailable for {snippet_id}: {str(e)[:100]}")
-        # Static analysis result is still used if available
+    # Merge sandbox errors into detected_errors (avoid duplicates)
+    for se in sandbox_errors:
+        if not any(e["type"] == se["type"] and e["message"] == se["message"] for e in detected_errors):
+            detected_errors.append(se)
+    
+    # Step 3: Bedrock AI — always try for complex code or when static analysis isn't enough
+    # The AI handles: logic errors, complex type mismatches, algorithm bugs,
+    # missing edge cases, and cross-language issues that static analysis can't catch.
+    use_ai = True  # Always attempt AI — it gracefully fails if unavailable
+    
+    if use_ai:
+        try:
+            # Build rich context for the LLM including all error sources
+            error_context = str(errors) if errors else "No explicit errors provided."
+            
+            if detected_errors:
+                error_context += "\n\nStatic analysis found: " + "; ".join(
+                    e["message"] for e in detected_errors
+                )
+            
+            if sandbox_errors:
+                error_context += "\n\nRuntime execution errors: " + "; ".join(
+                    f"{e['type']}: {e['message']}" for e in sandbox_errors
+                )
+            
+            # If no errors found by static analysis, ask AI for deeper review
+            if not detected_errors and not sandbox_errors:
+                error_context += (
+                    "\n\nNo obvious errors detected by static analysis. "
+                    "Please review for logic errors, edge cases, performance issues, "
+                    "best practice violations, or subtle bugs."
+                )
+            
+            client = BedrockLLMClient()
+            prompt = build_healing_prompt(original_code=code, error_log=error_context, language=language)
+            ai_code = client.generate_correction(prompt=prompt, system_prompt=HEALING_SYSTEM_PROMPT)
+            
+            if ai_code and ai_code.strip() != code.strip():
+                healed_code = ai_code
+                changes.append("Enhanced fix using Claude 3 via Amazon Bedrock")
+                confidence = 0.90
+                logger.info(f"Bedrock AI provided enhanced fix for {snippet_id}")
+        except Exception as e:
+            logger.warning(f"Bedrock AI unavailable for {snippet_id}: {str(e)[:100]}")
+            # Static analysis + sandbox results are still used
     
     # Build result
     healed = bool(healed_code and healed_code.strip() != code.strip())
@@ -568,6 +618,7 @@ def heal_code_snippet(
         "snippet_id": snippet_id,
         "file_path": file_path,
         "static_errors": detected_errors,
+        "sandbox_executed": not sandbox_result.get("skipped", True),
     }
     
     logger.info(f"Code snippet {snippet_id} healing complete: healed={healed}, errors_found={len(detected_errors)}")
@@ -578,48 +629,38 @@ def heal_documentation_file(
     file_path: str,
     validation_results: Dict[str, Any]
 ) -> Dict[str, Any]:
-    """Heal all invalid code snippets in a documentation file.
-    
-    This task processes validation results for a documentation file and
-    attempts to heal all invalid code snippets, creating a pull request
-    with the fixes.
-    
-    Args:
-        file_path: Path to the documentation file
-        validation_results: Validation results from validate_documentation_file
-        
-    Returns:
-        Dictionary containing healing results for the file
-        
-    Raises:
-        ValueError: If required parameters are missing
-    """
+    """Heal all invalid code snippets in a documentation file."""
     logger.info(f"Healing documentation file: {file_path}")
     
-    # Validate inputs
     if not file_path or not validation_results:
         raise ValueError("Both file_path and validation_results are required")
     
-    # Get queue backend for enqueuing healing tasks
     queue = get_queue_backend()
+    snippets_healed = 0
+    snippets_failed = 0
     
-    # TODO: Implement actual file healing logic
-    # This would typically:
-    # 1. Process validation results
-    # 2. Enqueue healing tasks for invalid snippets:
-    #    for snippet in invalid_snippets:
-    #        queue.enqueue("healing", heal_code_snippet,
-    #                     file_path, snippet.id, snippet.code, 
-    #                     snippet.language, snippet.errors)
-    # 3. Aggregate healed code
-    # 4. Create pull request with fixes
+    invalid_snippets = validation_results.get("invalid_snippets", [])
+    for snippet in invalid_snippets:
+        snippet_id = snippet.get("snippet_id", "unknown")
+        code = snippet.get("code", "")
+        language = snippet.get("language", "unknown")
+        errors = snippet.get("errors", [])
+        
+        if code:
+            queue.enqueue("healing", heal_code_snippet,
+                         file_path, snippet_id, code, language, errors)
+            snippets_healed += 1
+            logger.info(f"Enqueued healing for {snippet_id}")
+        else:
+            snippets_failed += 1
     
     result = {
         "file_path": file_path,
-        "snippets_healed": 0,
-        "snippets_failed": 0,
+        "snippets_healed": snippets_healed,
+        "snippets_failed": snippets_failed,
         "pull_request_url": None,
     }
     
-    logger.info(f"Documentation file healing complete: {file_path}")
+    logger.info(f"Documentation file healing: {snippets_healed} healed, {snippets_failed} failed")
     return result
+

@@ -156,10 +156,12 @@ class TestFormatErrors:
     def test_empty(self):
         assert format_errors_markdown([]) == ""
 
-    def test_syntax_error_icon(self):
+    def test_syntax_error_format(self):
         md = format_errors_markdown([{"type": "SyntaxError", "message": "bad"}])
-        assert "🔴" in md
+        assert "`SyntaxError`" in md
+        assert "bad" in md
 
-    def test_reference_error_icon(self):
+    def test_reference_error_format(self):
         md = format_errors_markdown([{"type": "ReferenceError", "message": "undef"}])
-        assert "🔵" in md
+        assert "`ReferenceError`" in md
+        assert "undef" in md

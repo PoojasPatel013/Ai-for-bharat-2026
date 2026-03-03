@@ -10,14 +10,14 @@ Rules:
 
 def build_healing_prompt(original_code: str, error_log: str, language: str) -> str:
     """Build the user prompt for the healing request."""
-    return f"""Please fix the following {language} code snippet.
+    return f"""Please analyze and fix/improve the following {language} code snippet.
 
 Original Code:
 ```{language}
 {original_code}
 ```
 
-Execution Error:
+Analysis & Errors:
 ```
 {error_log}
 ```

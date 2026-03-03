@@ -2,6 +2,7 @@
 
 secrets.json
 .coverage*
+
 # Python
 __pycache__/
 *.py[cod]
@@ -38,6 +39,7 @@ env/
 .pytest_cache/
 .coverage
 htmlcov/
+coverage.xml
 .tox/
 .hypothesis/
 
@@ -55,6 +57,7 @@ htmlcov/
 *.db
 *.sqlite
 *.sqlite3
+data/
 
 # Logs
 *.log
@@ -65,3 +68,26 @@ Thumbs.db
 
 # Docker
 docker-compose.override.yml
+
+# Debug / scratch scripts (never commit)
+test_*.py
+!tests/test_*.py
+debug_*.py
+check_*.py
+
+# AWS CLI output dumps and temp JSON
+worker_logs*.json
+crashed_worker*.json
+running_workers*.json
+service_status*.json
+health.json
+sg_linux.json
+*_task_def.json
+latest_task_def.json
+
+# Misc temp files
+final.txt
+run.json
+run_unix.json
+th.json
+

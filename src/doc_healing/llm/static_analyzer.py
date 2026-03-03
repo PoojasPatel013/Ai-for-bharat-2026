@@ -185,16 +185,51 @@ def analyze_javascript_code(code: str) -> Dict[str, Any]:
     errors.extend(bracket_errors)
     
     # Check for C-only functions used in JS context
-    c_only_funcs = {"scanf", "printf", "ptf", "gets", "puts", "fprintf", "fscanf"}
+    c_only_funcs = {
+        "scanf": "Use prompt() or readline for user input",
+        "printf": "Use console.log() for output",
+        "ptf": "Use console.log() for output",
+        "gets": "Use prompt() or readline for input",
+        "puts": "Use console.log() for output",
+        "fprintf": "Use console.log() or fs.writeFileSync()",
+        "fscanf": "Use fs.readFileSync() for file input",
+    }
+    # Java functions that don't exist in JS
+    java_funcs = {
+        "System.out.println": "Use console.log() instead",
+        "System.out.print": "Use process.stdout.write() instead",
+    }
+    # C++ functions that don't exist in JS
+    cpp_funcs = {
+        "cout": "Use console.log() instead",
+        "cin": "Use prompt() or readline instead",
+        "endl": "Use '\\n' instead",
+    }
     for line_no, line in enumerate(code.split("\n"), 1):
         stripped = line.strip()
-        for func in c_only_funcs:
+        for func, suggestion in c_only_funcs.items():
             if re.search(rf'\b{func}\s*\(', stripped):
                 errors.append({
                     "type": "ReferenceError",
-                    "message": f"'{func}' is not defined in JavaScript — this is a C/C++ function",
+                    "message": f"'{func}' is not defined in JavaScript (C/C++ function). {suggestion}",
                     "line": line_no,
-                    "detail": f"Line {line_no}: '{func}' does not exist in JS. Use console.log(), prompt(), etc."
+                    "detail": f"Line {line_no}: '{func}' does not exist in JS. {suggestion}"
+                })
+        for func, suggestion in java_funcs.items():
+            if func in stripped:
+                errors.append({
+                    "type": "ReferenceError",
+                    "message": f"'{func}' is a Java method, not valid in JavaScript. {suggestion}",
+                    "line": line_no,
+                    "detail": f"Line {line_no}: {suggestion}"
+                })
+        for func, suggestion in cpp_funcs.items():
+            if re.search(rf'\b{func}\b', stripped) and not stripped.startswith("//"):
+                errors.append({
+                    "type": "ReferenceError",
+                    "message": f"'{func}' is a C++ construct, not valid in JavaScript. {suggestion}",
+                    "line": line_no,
+                    "detail": f"Line {line_no}: {suggestion}"
                 })
         
         # Check for $$ which is not valid in most contexts
@@ -258,14 +293,40 @@ def analyze_generic_code(code: str, language: str = "unknown") -> Dict[str, Any]
         
         # scanf/printf used outside C/C++
         if language not in ("c", "cpp", "c++"):
-            for func in ("scanf", "printf"):
+            c_func_replacements = {
+                "scanf": {"python": "input()", "javascript": "prompt()", "java": "Scanner.nextLine()"},
+                "printf": {"python": "print()", "javascript": "console.log()", "java": "System.out.println()"},
+            }
+            for func, replacements in c_func_replacements.items():
                 if re.search(rf'\b{func}\s*\(', stripped):
+                    suggestion = replacements.get(language, "the equivalent function in " + language)
                     errors.append({
                         "type": "ReferenceError",
-                        "message": f"'{func}' is a C/C++ function, not valid in {language}",
+                        "message": f"'{func}' is a C/C++ function, not valid in {language}. Use {suggestion} instead",
                         "line": line_no,
-                        "detail": f"Line {line_no}: '{func}' is not available in {language}"
+                        "detail": f"Line {line_no}: '{func}' is not available in {language}. Use {suggestion}"
                     })
+        
+        # Python-specific misuses in non-Python code
+        if language not in ("python", "py"):
+            if re.search(r'\bprint\s*\(', stripped) and language in ("c", "cpp", "c++"):
+                errors.append({
+                    "type": "ReferenceError",
+                    "message": f"'print()' is a Python function, not valid in {language}. Use printf() instead",
+                    "line": line_no,
+                    "detail": f"Line {line_no}: 'print()' does not exist in {language}"
+                })
+        
+        # Java-specific misuses
+        if language not in ("java",):
+            if "System.out.println" in stripped or "System.out.print" in stripped:
+                py_or_js = "print()" if language in ("python", "py") else "console.log()"
+                errors.append({
+                    "type": "ReferenceError",
+                    "message": f"'System.out.println' is Java-only, not valid in {language}. Use {py_or_js} instead",
+                    "line": line_no,
+                    "detail": f"Line {line_no}: Java method used in {language} context"
+                })
         
         # $$ in non-shell/non-perl contexts
         if "$$" in stripped and language not in ("bash", "sh", "perl", "shell"):
@@ -369,14 +430,26 @@ def detect_language(code: str) -> str:
     if re.search(r'\bfunction\s+\w+', code) or "=>" in code:
         return "javascript"
     
-    # C/C++ indicators
+    # C/C++ indicators — check BEFORE fallback
     if re.search(r'#include\s*<', code) or re.search(r'\bint\s+main\s*\(', code):
         return "c"
+    # If both printf AND scanf are present, almost certainly C
+    if re.search(r'\bprintf\s*\(', code) and re.search(r'\bscanf\s*\(', code):
+        return "c"
+    # If printf/scanf with semicolons, likely C
     if re.search(r'\b(printf|scanf)\s*\(', code) and ";" in code:
+        return "c"
+    # If printf/scanf without semicolons but nested (e.g., printf(scanf())), still C
+    if re.search(r'\b(printf|scanf)\s*\(.*\b(printf|scanf)\s*\(', code):
+        return "c"
+    # Single printf/scanf usage is still a strong C indicator
+    if re.search(r'\b(printf|scanf)\s*\(', code):
         return "c"
     
     # Java
     if re.search(r'\bpublic\s+(static\s+)?class\s+', code):
+        return "java"
+    if "System.out.println" in code or "System.out.print" in code:
         return "java"
     
     # Bash
@@ -419,12 +492,6 @@ def format_errors_markdown(errors: List[Dict]) -> str:
     
     lines = []
     for e in errors:
-        icon = {
-            "SyntaxError": "🔴",
-            "SyntaxWarning": "🟠",
-            "TypeError": "🟡",
-            "ReferenceError": "🔵",
-        }.get(e["type"], "⚠️")
-        lines.append(f"- {icon} **{e['type']}**: {e['message']}")
+        lines.append(f"- `{e['type']}` — {e['message']}")
     
     return "\n".join(lines)
