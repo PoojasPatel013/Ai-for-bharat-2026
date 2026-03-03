@@ -184,11 +184,102 @@ def execute_python(code: str, timeout: int = DEFAULT_TIMEOUT) -> Dict[str, Any]:
             pass
 
 
+def execute_javascript(code: str, timeout: int = DEFAULT_TIMEOUT) -> Dict[str, Any]:
+    """Execute JavaScript code in a sandbox using node --check.
+    
+    This performs a syntax and basic compilation check without running the code,
+    preventing malicious execution while catching syntax errors.
+    """
+    try:
+        with tempfile.NamedTemporaryFile(
+            mode="w", suffix=".js", delete=False, prefix="oasis_sandbox_"
+        ) as f:
+            f.write(code)
+            script_path = f.name
+    except Exception as e:
+        return {
+            "success": False,
+            "stdout": "",
+            "stderr": str(e),
+            "exit_code": 1,
+            "error_type": "InternalError",
+            "error_message": f"Failed to create sandbox script: {e}",
+            "timed_out": False,
+        }
+
+    try:
+        # Use node --check for syntax validation without full execution
+        cmd = ["node", "--check", script_path]
+
+        result = subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True,
+            timeout=timeout,
+        )
+
+        stdout = result.stdout[:5000]
+        stderr = result.stderr[:5000]
+
+        error_type = None
+        error_message = None
+        if result.returncode != 0 and stderr:
+            # Parse Node.js error output
+            lines = stderr.strip().split('\n')
+            for line in reversed(lines):
+                if 'Error:' in line or 'SyntaxError:' in line or 'ReferenceError:' in line:
+                    parts = line.split(':', 1)
+                    error_type = parts[0].strip()
+                    error_message = parts[1].strip() if len(parts) > 1 else line
+                    break
+            
+            if not error_type:
+                error_type = "JSError"
+                error_message = lines[-1][:200]
+
+        return {
+            "success": result.returncode == 0,
+            "stdout": stdout,
+            "stderr": stderr,
+            "exit_code": result.returncode,
+            "error_type": error_type,
+            "error_message": error_message,
+            "timed_out": False,
+        }
+
+    except subprocess.TimeoutExpired:
+        return {
+            "success": False,
+            "stdout": "",
+            "stderr": f"Execution timed out after {timeout}s",
+            "exit_code": -1,
+            "error_type": "TimeoutError",
+            "error_message": f"Code execution exceeded the {timeout}s time limit",
+            "timed_out": True,
+        }
+    except Exception as e:
+        return {
+            "success": False,
+            "stdout": "",
+            "stderr": str(e),
+            "exit_code": -1,
+            "error_type": "InternalError",
+            "error_message": f"Sandbox execution failed: {e}",
+            "timed_out": False,
+        }
+    finally:
+        try:
+            os.unlink(script_path)
+        except OSError:
+            pass
+
+
 def execute_code(code: str, language: str, timeout: int = DEFAULT_TIMEOUT) -> Dict[str, Any]:
     """Execute code in a sandbox, dispatching by language.
 
     Currently supports:
     - Python: full subprocess execution with resource limits
+    - JavaScript: syntax checking via node --check
 
     Other languages return a 'not supported' result — they still get
     analyzed by the static analyzer and Bedrock AI.
@@ -197,6 +288,8 @@ def execute_code(code: str, language: str, timeout: int = DEFAULT_TIMEOUT) -> Di
 
     if lang in ("python", "py"):
         return execute_python(code, timeout=timeout)
+    elif lang in ("javascript", "js", "typescript", "ts"):
+        return execute_javascript(code, timeout=timeout)
 
     # For non-Python languages, we can't execute but we signal that
     # static analysis + LLM should be used instead

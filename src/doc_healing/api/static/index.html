@@ -120,7 +120,8 @@
           </li>
           <li><strong>Multi-Language Support</strong> — Python, JavaScript, TypeScript, Java, Go, Rust, C/C++, and more
           </li>
-          <li><strong>Sandbox Execution</strong> — Python snippets run in isolated subprocesses with timeout and memory limits
+          <li><strong>Sandbox Execution</strong> — Python snippets run in isolated subprocesses with timeout and memory
+            limits
           </li>
           <li><strong>Auto-Correction</strong> — AI-powered fix suggestions posted as PR comments</li>
           <li><strong>GitHub/GitLab Integration</strong> — Seamless webhook-based bot integration</li>
@@ -422,7 +423,8 @@ $ git push origin test-oasis</code></pre>
         <h2>Architecture Diagram</h2>
         <p>Below is the full system architecture showing how all components interact:</p>
         <div style="text-align:center;margin:2rem 0">
-          <img src="/static/images/architecture.png" alt="OASIS System Architecture" style="max-width:100%;border-radius:8px;border:1px solid var(--border)" />
+          <img src="/static/images/architecture.png" alt="OASIS System Architecture"
+            style="max-width:100%;border-radius:8px;border:1px solid var(--border)" />
         </div>
 
         <h2>Deployment</h2>
@@ -516,434 +518,442 @@ $ git push origin test-oasis</code></pre>
         <h2>Workflow Diagram</h2>
         <p>The complete PR analysis and healing flow:</p>
         <div style="text-align:center;margin:2rem 0">
-          <img src="/static/images/workflow.png" alt="OASIS Workflow Diagram" style="max-width:100%;border-radius:8px;border:1px solid var(--border)" />
+          <img src="/static/images/workflow.png" alt="OASIS Workflow Diagram"
+            style="max-width:100%;border-radius:8px;border:1px solid var(--border)" />
         </div>
 
-      <!-- PAGE: components -->
-      <article class="page hidden" id="page-components">
-        <h1>Components</h1>
+        <!-- PAGE: components -->
+        <article class="page hidden" id="page-components">
+          <h1>Components</h1>
 
-        <h2>🧠 Static Analyzers</h2>
-        <table>
-          <thead>
-            <tr>
-              <th>Analyzer</th>
-              <th>Method</th>
-              <th>Detects</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td><strong>Python</strong></td>
-              <td><code>ast.parse()</code> + <code>compile()</code></td>
-              <td>Syntax errors, missing args, type mismatches, wrong arg counts</td>
-            </tr>
-            <tr>
-              <td><strong>JavaScript</strong></td>
-              <td>Heuristic pattern matching</td>
-              <td>C-only functions in JS, <code>$$</code> syntax, bracket mismatches</td>
-            </tr>
-            <tr>
-              <td><strong>Generic</strong></td>
-              <td>Universal pattern analysis</td>
-              <td>Mixed-language patterns, typo'd functions, mismatched brackets</td>
-            </tr>
-            <tr>
-              <td><strong>Auto-detect</strong></td>
-              <td><code>detect_language()</code></td>
-              <td>Determines language from code patterns for untagged blocks</td>
-            </tr>
-          </tbody>
-        </table>
-
-        <h2>☁️ Amazon Bedrock AI</h2>
-        <ul>
-          <li><strong>Model:</strong> Claude 3 Sonnet (primary), Claude 3 Haiku (fallback)</li>
-          <li><strong>Temperature:</strong> 0.1 (low, for deterministic code generation)</li>
-          <li><strong>Fallback:</strong> Automatic fallback on throttling or capacity errors</li>
-          <li><strong>Graceful degradation:</strong> Static analysis results are used if Bedrock is unavailable</li>
-        </ul>
-
-        <h2>📦 Queue System</h2>
-        <ul>
-          <li><strong>Production:</strong> Redis-based with multiple workers</li>
-          <li><strong>Lightweight:</strong> In-memory queue with synchronous processing</li>
-          <li>Three queues: <code>webhooks</code>, <code>validation</code>, <code>healing</code></li>
-        </ul>
-
-        <h2>🔒 Security</h2>
-        <ul>
-          <li>HMAC-SHA256 webhook signature verification</li>
-          <li>AWS Secrets Manager for credential storage</li>
-          <li>Python sandbox: isolated subprocess with 5s timeout, 50MB memory limit, blocked dangerous imports</li>
-          <li>Scoped GitHub token permissions (read PRs, write comments)</li>
-        </ul>
-      </article>
-
-      <!-- PAGE: routes-webhooks -->
-      <article class="page hidden" id="page-routes-webhooks">
-        <h1>API Reference — Webhook Routes</h1>
-
-        <div class="route-card">
-          <div class="route-method post">POST</div>
-          <code class="route-path">/webhooks/github</code>
-          <p>Receive GitHub webhook events. Verifies the <code>X-Hub-Signature-256</code> header using HMAC-SHA256,
-            parses the PR payload, and enqueues an analysis task.</p>
-          <h4>Headers:</h4>
-          <table class="sm">
-            <tr>
-              <td><code>X-Hub-Signature-256</code></td>
-              <td>HMAC-SHA256 signature of the request body</td>
-            </tr>
-            <tr>
-              <td><code>Content-Type</code></td>
-              <td><code>application/json</code></td>
-            </tr>
+          <h2>🧠 Static Analyzers</h2>
+          <table>
+            <thead>
+              <tr>
+                <th>Analyzer</th>
+                <th>Method</th>
+                <th>Detects</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Python</strong></td>
+                <td><code>ast.parse()</code> + <code>compile()</code></td>
+                <td>Syntax errors, missing args, type mismatches, wrong arg counts</td>
+              </tr>
+              <tr>
+                <td><strong>JavaScript</strong></td>
+                <td>Heuristic pattern matching</td>
+                <td>C-only functions in JS, <code>$$</code> syntax, bracket mismatches</td>
+              </tr>
+              <tr>
+                <td><strong>Generic</strong></td>
+                <td>Universal pattern analysis</td>
+                <td>Mixed-language patterns, typo'd functions, mismatched brackets</td>
+              </tr>
+              <tr>
+                <td><strong>Auto-detect</strong></td>
+                <td><code>detect_language()</code></td>
+                <td>Determines language from code patterns for untagged blocks</td>
+              </tr>
+            </tbody>
           </table>
-          <h4>Triggered by:</h4>
+
+          <h2>☁️ Amazon Bedrock AI</h2>
           <ul>
-            <li>PR opened, synchronized (new commits pushed), or reopened</li>
+            <li><strong>Model:</strong> Claude 3 Sonnet (primary), Claude 3 Haiku (fallback)</li>
+            <li><strong>Temperature:</strong> 0.1 (low, for deterministic code generation)</li>
+            <li><strong>Fallback:</strong> Automatic fallback on throttling or capacity errors</li>
+            <li><strong>Graceful degradation:</strong> Static analysis results are used if Bedrock is unavailable</li>
           </ul>
-          <h4>Response:</h4>
-          <div class="codeblock">
-            <pre><code>{"task_id": "abc-123", "status": "queued", "queue_name": "webhooks"}</code></pre>
+
+          <h2>📦 Queue System</h2>
+          <ul>
+            <li><strong>Production:</strong> Redis-based with multiple workers</li>
+            <li><strong>Lightweight:</strong> In-memory queue with synchronous processing</li>
+            <li>Three queues: <code>webhooks</code>, <code>validation</code>, <code>healing</code></li>
+          </ul>
+
+          <h2>🔒 Security</h2>
+          <ul>
+            <li>HMAC-SHA256 webhook signature verification</li>
+            <li>AWS Secrets Manager for credential storage</li>
+            <li>Sandbox: isolated subprocess with resource limits (Python) and syntax check (JS/TS)</li>
+            <li>Scoped GitHub token permissions (read PRs, write comments)</li>
+          </ul>
+        </article>
+
+        <!-- PAGE: routes-webhooks -->
+        <article class="page hidden" id="page-routes-webhooks">
+          <h1>API Reference — Webhook Routes</h1>
+
+          <div class="route-card">
+            <div class="route-method post">POST</div>
+            <code class="route-path">/webhooks/github</code>
+            <p>Receive GitHub webhook events. Verifies the <code>X-Hub-Signature-256</code> header using HMAC-SHA256,
+              parses the PR payload, and enqueues an analysis task.</p>
+            <h4>Headers:</h4>
+            <table class="sm">
+              <tr>
+                <td><code>X-Hub-Signature-256</code></td>
+                <td>HMAC-SHA256 signature of the request body</td>
+              </tr>
+              <tr>
+                <td><code>Content-Type</code></td>
+                <td><code>application/json</code></td>
+              </tr>
+            </table>
+            <h4>Triggered by:</h4>
+            <ul>
+              <li>PR opened, synchronized (new commits pushed), or reopened</li>
+            </ul>
+            <h4>Response:</h4>
+            <div class="codeblock">
+              <pre><code>{"task_id": "abc-123", "status": "queued", "queue_name": "webhooks"}</code></pre>
+            </div>
           </div>
-        </div>
 
-        <div class="route-card">
-          <div class="route-method post">POST</div>
-          <code class="route-path">/webhooks/gitlab</code>
-          <p>Receive GitLab webhook events for merge request analysis. Accepts the standard GitLab webhook payload
-            format.</p>
-          <h4>Response:</h4>
-          <div class="codeblock">
-            <pre><code>{"task_id": "def-456", "status": "queued", "queue_name": "webhooks"}</code></pre>
+          <div class="route-card">
+            <div class="route-method post">POST</div>
+            <code class="route-path">/webhooks/gitlab</code>
+            <p>Receive GitLab webhook events for merge request analysis. Accepts the standard GitLab webhook payload
+              format.</p>
+            <h4>Response:</h4>
+            <div class="codeblock">
+              <pre><code>{"task_id": "def-456", "status": "queued", "queue_name": "webhooks"}</code></pre>
+            </div>
           </div>
-        </div>
-      </article>
+        </article>
 
-      <!-- PAGE: routes-validation -->
-      <article class="page hidden" id="page-routes-validation">
-        <h1>API Reference — Validation Routes</h1>
+        <!-- PAGE: routes-validation -->
+        <article class="page hidden" id="page-routes-validation">
+          <h1>API Reference — Validation Routes</h1>
 
-        <div class="route-card">
-          <div class="route-method post">POST</div>
-          <code class="route-path">/validate/snippet</code>
-          <p>Validate a single code snippet. Submit the code, language, and file context to check for bugs.</p>
-          <h4>Request Body:</h4>
-          <div class="codeblock">
-            <pre><code>{
+          <div class="route-card">
+            <div class="route-method post">POST</div>
+            <code class="route-path">/validate/snippet</code>
+            <p>Validate a single code snippet. Submit the code, language, and file context to check for bugs.</p>
+            <h4>Request Body:</h4>
+            <div class="codeblock">
+              <pre><code>{
   "file_path": "docs/tutorial.md",
   "snippet_id": "snippet-1",
   "code": "print('hello world')",
   "language": "python"
 }</code></pre>
+            </div>
+            <h4>Response:</h4>
+            <div class="codeblock">
+              <pre><code>{"task_id": "...", "status": "queued", "queue_name": "validation"}</code></pre>
+            </div>
           </div>
-          <h4>Response:</h4>
-          <div class="codeblock">
-            <pre><code>{"task_id": "...", "status": "queued", "queue_name": "validation"}</code></pre>
-          </div>
-        </div>
 
-        <div class="route-card">
-          <div class="route-method post">POST</div>
-          <code class="route-path">/validate/file</code>
-          <p>Validate all code snippets in a documentation file. OASIS extracts all code blocks and validates each one.
-          </p>
-          <h4>Request Body:</h4>
-          <div class="codeblock">
-            <pre><code>{
+          <div class="route-card">
+            <div class="route-method post">POST</div>
+            <code class="route-path">/validate/file</code>
+            <p>Validate all code snippets in a documentation file. OASIS extracts all code blocks and validates each
+              one.
+            </p>
+            <h4>Request Body:</h4>
+            <div class="codeblock">
+              <pre><code>{
   "file_path": "README.md",
   "content": "# My Project\n\n```python\nprint('hello')\n```"
 }</code></pre>
+            </div>
           </div>
-        </div>
-      </article>
+        </article>
 
-      <!-- PAGE: routes-healing -->
-      <article class="page hidden" id="page-routes-healing">
-        <h1>API Reference — Healing Routes</h1>
+        <!-- PAGE: routes-healing -->
+        <article class="page hidden" id="page-routes-healing">
+          <h1>API Reference — Healing Routes</h1>
 
-        <div class="route-card">
-          <div class="route-method post">POST</div>
-          <code class="route-path">/heal/snippet</code>
-          <p>Heal a broken code snippet. Uses hybrid analysis: static analysis for reliable bug detection + Amazon
-            Bedrock AI for intelligent fix suggestions.</p>
-          <h4>Request Body:</h4>
-          <div class="codeblock">
-            <pre><code>{
+          <div class="route-card">
+            <div class="route-method post">POST</div>
+            <code class="route-path">/heal/snippet</code>
+            <p>Heal a broken code snippet. Uses hybrid analysis: static analysis for reliable bug detection + Amazon
+              Bedrock AI for intelligent fix suggestions.</p>
+            <h4>Request Body:</h4>
+            <div class="codeblock">
+              <pre><code>{
   "file_path": "docs/tutorial.md",
   "snippet_id": "snippet-1",
   "code": "print('hello'",
   "language": "python",
   "errors": ["SyntaxError: unexpected EOF"]
 }</code></pre>
-          </div>
-          <h4>Response:</h4>
-          <div class="codeblock">
-            <pre><code>{"task_id": "...", "status": "queued", "queue_name": "healing"}</code></pre>
-          </div>
-        </div>
-
-        <div class="route-card">
-          <div class="route-method post">POST</div>
-          <code class="route-path">/heal/file</code>
-          <p>Heal all broken code snippets in a documentation file. Processes validation results and generates fixes for
-            each broken snippet.</p>
-        </div>
-      </article>
-
-      <!-- PAGE: routes-health -->
-      <article class="page hidden" id="page-routes-health">
-        <h1>API Reference — Health & Status</h1>
-
-        <div class="route-card">
-          <div class="route-method get">GET</div>
-          <code class="route-path">/health</code>
-          <p>Health check endpoint. Returns the current status of the OASIS service.</p>
-          <h4>Response:</h4>
-          <div class="codeblock">
-            <pre><code>{"status": "healthy"}</code></pre>
-          </div>
-        </div>
-
-        <div class="route-card">
-          <div class="route-method get">GET</div>
-          <code class="route-path">/</code>
-          <p>Root endpoint. Serves this documentation page.</p>
-        </div>
-
-        <div class="route-card">
-          <div class="route-method get">GET</div>
-          <code class="route-path">/docs</code>
-          <p>Interactive Swagger UI — auto-generated from the FastAPI OpenAPI schema. Test all endpoints directly from
-            your browser.</p>
-        </div>
-      </article>
-
-      <!-- PAGE: how-yml -->
-      <article class="page hidden" id="page-how-yml">
-        <h1>How the YML Configuration Works</h1>
-        <p>The <code>.doc-healing.yml</code> file is read by OASIS on every PR event. It controls the entire behavior of
-          the bot.</p>
-
-        <h2>Processing Order</h2>
-        <ol>
-          <li>OASIS receives a webhook event</li>
-          <li>Fetches <code>.doc-healing.yml</code> from the PR's head branch</li>
-          <li>If <code>enabled: false</code>, OASIS skips the PR entirely</li>
-          <li>Filters changed files using <code>documentation.include</code> and <code>documentation.exclude</code>
-            globs</li>
-          <li>For each matching file, extracts code blocks tagged with languages listed under <code>languages</code>
-          </li>
-          <li>Applies the <code>validation</code> settings to determine behavior</li>
-        </ol>
-
-        <h2>Glob Pattern Examples</h2>
-        <table>
-          <thead>
-            <tr>
-              <th>Pattern</th>
-              <th>Matches</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td><code>docs/**/*.md</code></td>
-              <td>All <code>.md</code> files recursively under <code>docs/</code></td>
-            </tr>
-            <tr>
-              <td><code>README.md</code></td>
-              <td>Only the root README</td>
-            </tr>
-            <tr>
-              <td><code>**/*.rst</code></td>
-              <td>All reStructuredText files in the entire repo</td>
-            </tr>
-            <tr>
-              <td><code>!docs/archive/**</code></td>
-              <td>Exclude everything under <code>docs/archive/</code></td>
-            </tr>
-          </tbody>
-        </table>
-
-        <h2>Confidence Threshold</h2>
-        <p>The <code>confidenceThreshold</code> (0.0–1.0) controls when OASIS suggests fixes:</p>
-        <ul>
-          <li><strong>0.75</strong> — Static analysis fix (high confidence, reliable)</li>
-          <li><strong>0.90</strong> — Bedrock AI fix (AI-enhanced, verified against static analysis)</li>
-          <li>Fixes below the threshold are not suggested to avoid false positives</li>
-        </ul>
-      </article>
-
-      <!-- PAGE: how-webhooks -->
-      <article class="page hidden" id="page-how-webhooks">
-        <h1>How Webhooks Work</h1>
-        <p>Webhooks are the backbone of OASIS integration. Here's a detailed explanation of the entire webhook
-          lifecycle.</p>
-
-        <h2>1. GitHub Fires the Event</h2>
-        <p>When a PR is opened, GitHub constructs a JSON payload containing the PR metadata, changed files, and
-          repository information. It then sends an HTTP POST request to the configured webhook URL.</p>
-
-        <h2>2. OASIS Authenticates</h2>
-        <p>OASIS reads the <code>X-Hub-Signature-256</code> header and computes its own HMAC-SHA256 hash of the request
-          body using the shared secret. If the signatures don't match, the request is rejected with a
-          <code>401 Unauthorized</code> response.
-        </p>
-
-        <h2>3. Task Enqueuing</h2>
-        <p>The authenticated payload is enqueued into the task queue (Redis in production, in-memory for development).
-          This ensures the webhook response returns immediately (< 1 second) while analysis happens asynchronously.</p>
-
-            <h2>4. Worker Processing</h2>
-            <p>A worker picks up the task and executes the full flow: fetch PR files, categorize, extract code, analyze,
-              heal, and post the comment. This can take 5–30 seconds depending on PR size.</p>
-
-            <h2>5. Duplicate Protection</h2>
-            <p>If OASIS has already commented on the PR, it <strong>updates the existing comment</strong> instead of
-              posting a new one. This prevents comment spam when new commits are pushed.</p>
+            </div>
+            <h4>Response:</h4>
             <div class="codeblock">
-              <div class="codeblock-header">Duplicate detection logic</div>
-              <pre><code>BOT_SIGNATURE = "🏜️ **OASIS"
+              <pre><code>{"task_id": "...", "status": "queued", "queue_name": "healing"}</code></pre>
+            </div>
+          </div>
+
+          <div class="route-card">
+            <div class="route-method post">POST</div>
+            <code class="route-path">/heal/file</code>
+            <p>Heal all broken code snippets in a documentation file. Processes validation results and generates fixes
+              for
+              each broken snippet.</p>
+          </div>
+        </article>
+
+        <!-- PAGE: routes-health -->
+        <article class="page hidden" id="page-routes-health">
+          <h1>API Reference — Health & Status</h1>
+
+          <div class="route-card">
+            <div class="route-method get">GET</div>
+            <code class="route-path">/health</code>
+            <p>Health check endpoint. Returns the current status of the OASIS service.</p>
+            <h4>Response:</h4>
+            <div class="codeblock">
+              <pre><code>{"status": "healthy"}</code></pre>
+            </div>
+          </div>
+
+          <div class="route-card">
+            <div class="route-method get">GET</div>
+            <code class="route-path">/</code>
+            <p>Root endpoint. Serves this documentation page.</p>
+          </div>
+
+          <div class="route-card">
+            <div class="route-method get">GET</div>
+            <code class="route-path">/docs</code>
+            <p>Interactive Swagger UI — auto-generated from the FastAPI OpenAPI schema. Test all endpoints directly from
+              your browser.</p>
+          </div>
+        </article>
+
+        <!-- PAGE: how-yml -->
+        <article class="page hidden" id="page-how-yml">
+          <h1>How the YML Configuration Works</h1>
+          <p>The <code>.doc-healing.yml</code> file is read by OASIS on every PR event. It controls the entire behavior
+            of
+            the bot.</p>
+
+          <h2>Processing Order</h2>
+          <ol>
+            <li>OASIS receives a webhook event</li>
+            <li>Fetches <code>.doc-healing.yml</code> from the PR's head branch</li>
+            <li>If <code>enabled: false</code>, OASIS skips the PR entirely</li>
+            <li>Filters changed files using <code>documentation.include</code> and <code>documentation.exclude</code>
+              globs</li>
+            <li>For each matching file, extracts code blocks tagged with languages listed under <code>languages</code>
+            </li>
+            <li>Applies the <code>validation</code> settings to determine behavior</li>
+          </ol>
+
+          <h2>Glob Pattern Examples</h2>
+          <table>
+            <thead>
+              <tr>
+                <th>Pattern</th>
+                <th>Matches</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>docs/**/*.md</code></td>
+                <td>All <code>.md</code> files recursively under <code>docs/</code></td>
+              </tr>
+              <tr>
+                <td><code>README.md</code></td>
+                <td>Only the root README</td>
+              </tr>
+              <tr>
+                <td><code>**/*.rst</code></td>
+                <td>All reStructuredText files in the entire repo</td>
+              </tr>
+              <tr>
+                <td><code>!docs/archive/**</code></td>
+                <td>Exclude everything under <code>docs/archive/</code></td>
+              </tr>
+            </tbody>
+          </table>
+
+          <h2>Confidence Threshold</h2>
+          <p>The <code>confidenceThreshold</code> (0.0–1.0) controls when OASIS suggests fixes:</p>
+          <ul>
+            <li><strong>0.75</strong> — Static analysis fix (high confidence, reliable)</li>
+            <li><strong>0.90</strong> — Bedrock AI fix (AI-enhanced, verified against static analysis)</li>
+            <li>Fixes below the threshold are not suggested to avoid false positives</li>
+          </ul>
+        </article>
+
+        <!-- PAGE: how-webhooks -->
+        <article class="page hidden" id="page-how-webhooks">
+          <h1>How Webhooks Work</h1>
+          <p>Webhooks are the backbone of OASIS integration. Here's a detailed explanation of the entire webhook
+            lifecycle.</p>
+
+          <h2>1. GitHub Fires the Event</h2>
+          <p>When a PR is opened, GitHub constructs a JSON payload containing the PR metadata, changed files, and
+            repository information. It then sends an HTTP POST request to the configured webhook URL.</p>
+
+          <h2>2. OASIS Authenticates</h2>
+          <p>OASIS reads the <code>X-Hub-Signature-256</code> header and computes its own HMAC-SHA256 hash of the
+            request
+            body using the shared secret. If the signatures don't match, the request is rejected with a
+            <code>401 Unauthorized</code> response.
+          </p>
+
+          <h2>3. Task Enqueuing</h2>
+          <p>The authenticated payload is enqueued into the task queue (Redis in production, in-memory for development).
+            This ensures the webhook response returns immediately (< 1 second) while analysis happens
+              asynchronously.</p>
+
+              <h2>4. Worker Processing</h2>
+              <p>A worker picks up the task and executes the full flow: fetch PR files, categorize, extract code,
+                analyze,
+                heal, and post the comment. This can take 5–30 seconds depending on PR size.</p>
+
+              <h2>5. Duplicate Protection</h2>
+              <p>If OASIS has already commented on the PR, it <strong>updates the existing comment</strong> instead of
+                posting a new one. This prevents comment spam when new commits are pushed.</p>
+              <div class="codeblock">
+                <div class="codeblock-header">Duplicate detection logic</div>
+                <pre><code>BOT_SIGNATURE = "🏜️ **OASIS"
 for comment in existing_comments:
     if BOT_SIGNATURE in comment["body"]:
         # PATCH existing comment instead of POST new</code></pre>
-            </div>
-      </article>
+              </div>
+        </article>
 
-      <!-- PAGE: languages -->
-      <article class="page hidden" id="page-languages">
-        <h1>Supported Languages</h1>
-        <table>
-          <thead>
-            <tr>
-              <th>Language</th>
-              <th>Fenced Block Tag</th>
-              <th>Analysis Method</th>
-              <th>Static Analyzer</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>Python</td>
-              <td><code>python</code>, <code>py</code></td>
-              <td>AST + compile()</td>
-              <td>✅ Full (syntax, args, types)</td>
-            </tr>
-            <tr>
-              <td>JavaScript</td>
-              <td><code>javascript</code>, <code>js</code></td>
-              <td>Heuristic patterns</td>
-              <td>✅ (C-funcs, $$, brackets)</td>
-            </tr>
-            <tr>
-              <td>TypeScript</td>
-              <td><code>typescript</code>, <code>ts</code></td>
-              <td>Heuristic patterns</td>
-              <td>✅ (same as JS)</td>
-            </tr>
-            <tr>
-              <td>Java</td>
-              <td><code>java</code></td>
-              <td>Generic analysis</td>
-              <td>⚡ Brackets + patterns</td>
-            </tr>
-            <tr>
-              <td>Go</td>
-              <td><code>go</code></td>
-              <td>Generic analysis</td>
-              <td>⚡ Brackets + patterns</td>
-            </tr>
-            <tr>
-              <td>Ruby</td>
-              <td><code>ruby</code></td>
-              <td>Generic analysis</td>
-              <td>⚡ Brackets + patterns</td>
-            </tr>
-            <tr>
-              <td>Rust</td>
-              <td><code>rust</code></td>
-              <td>Generic analysis</td>
-              <td>⚡ Brackets + patterns</td>
-            </tr>
-            <tr>
-              <td>C / C++</td>
-              <td><code>c</code>, <code>cpp</code></td>
-              <td>Generic analysis</td>
-              <td>⚡ Brackets + patterns</td>
-            </tr>
-            <tr>
-              <td>PHP</td>
-              <td><code>php</code></td>
-              <td>Generic analysis</td>
-              <td>⚡ Brackets + patterns</td>
-            </tr>
-            <tr>
-              <td>Bash</td>
-              <td><code>bash</code>, <code>sh</code></td>
-              <td>Generic analysis</td>
-              <td>⚡ Basic checks</td>
-            </tr>
-          </tbody>
-        </table>
-        <p><strong>All languages</strong> also benefit from Amazon Bedrock AI analysis when available, which provides
-          deeper semantic understanding.</p>
-      </article>
+        <!-- PAGE: languages -->
+        <article class="page hidden" id="page-languages">
+          <h1>Supported Languages</h1>
+          <table>
+            <thead>
+              <tr>
+                <th>Language</th>
+                <th>Fenced Block Tag</th>
+                <th>Analysis Method</th>
+                <th>Static Analyzer</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Python</td>
+                <td><code>python</code>, <code>py</code></td>
+                <td>AST + compile()</td>
+                <td>✅ Full (syntax, args, types)</td>
+              </tr>
+              <tr>
+                <td>JavaScript</td>
+                <td><code>javascript</code>, <code>js</code></td>
+                <td>Heuristic patterns</td>
+                <td>✅ (C-funcs, $$, brackets)</td>
+              </tr>
+              <tr>
+                <td>TypeScript</td>
+                <td><code>typescript</code>, <code>ts</code></td>
+                <td>Heuristic patterns</td>
+                <td>✅ (same as JS)</td>
+              </tr>
+              <tr>
+                <td>Java</td>
+                <td><code>java</code></td>
+                <td>Generic analysis</td>
+                <td>⚡ Brackets + patterns</td>
+              </tr>
+              <tr>
+                <td>Go</td>
+                <td><code>go</code></td>
+                <td>Generic analysis</td>
+                <td>⚡ Brackets + patterns</td>
+              </tr>
+              <tr>
+                <td>Ruby</td>
+                <td><code>ruby</code></td>
+                <td>Generic analysis</td>
+                <td>⚡ Brackets + patterns</td>
+              </tr>
+              <tr>
+                <td>Rust</td>
+                <td><code>rust</code></td>
+                <td>Generic analysis</td>
+                <td>⚡ Brackets + patterns</td>
+              </tr>
+              <tr>
+                <td>C / C++</td>
+                <td><code>c</code>, <code>cpp</code></td>
+                <td>Generic analysis</td>
+                <td>⚡ Brackets + patterns</td>
+              </tr>
+              <tr>
+                <td>PHP</td>
+                <td><code>php</code></td>
+                <td>Generic analysis</td>
+                <td>⚡ Brackets + patterns</td>
+              </tr>
+              <tr>
+                <td>Bash</td>
+                <td><code>bash</code>, <code>sh</code></td>
+                <td>Generic analysis</td>
+                <td>⚡ Basic checks</td>
+              </tr>
+            </tbody>
+          </table>
+          <p><strong>All languages</strong> also benefit from Amazon Bedrock AI analysis when available, which provides
+            deeper semantic understanding.</p>
+        </article>
 
-      <!-- PAGE: analysis-methods -->
-      <article class="page hidden" id="page-analysis-methods">
-        <h1>Analysis Methods</h1>
-        <p>OASIS uses a <strong>hybrid approach</strong> combining reliable static analysis with AI-powered reasoning.
-        </p>
+        <!-- PAGE: analysis-methods -->
+        <article class="page hidden" id="page-analysis-methods">
+          <h1>Analysis Methods</h1>
+          <p>OASIS uses a <strong>hybrid approach</strong> combining reliable static analysis with AI-powered reasoning.
+          </p>
 
-        <h2>Layer 1: Static Analysis (Always Available)</h2>
-        <p>This layer uses built-in language tools and pattern matching. It runs locally with no external dependencies
-          and is 100% deterministic.</p>
-        <div class="codeblock">
-          <div class="codeblock-header">Python Example — AST Analysis</div>
-          <pre><code># Detects: SyntaxError, wrong arg count, type mismatches
+          <h2>Layer 1: Static Analysis (Always Available)</h2>
+          <p>This layer uses built-in language tools and pattern matching. It runs locally with no external dependencies
+            and is 100% deterministic.</p>
+          <div class="codeblock">
+            <div class="codeblock-header">Python Example — AST Analysis</div>
+            <pre><code># Detects: SyntaxError, wrong arg count, type mismatches
 tree = ast.parse(code)
 for node in ast.walk(tree):
     if isinstance(node, ast.Call):
         # Check argument count against function definition
         ...</code></pre>
-        </div>
+          </div>
 
-        <h2>Layer 2: Sandbox Execution (Python)</h2>
-        <p>Python snippets are executed in isolated subprocesses with resource limits. This catches runtime errors
-          that static analysis misses — NameErrors, TypeErrors, infinite loops, and import failures.</p>
-        <ul>
-          <li><strong>Timeout:</strong> 5 seconds per snippet</li>
-          <li><strong>Memory:</strong> 50MB limit via <code>ulimit</code></li>
-          <li><strong>Blocked imports:</strong> <code>os</code>, <code>subprocess</code>, <code>socket</code>, <code>shutil</code>, etc.</li>
-          <li><strong>Blocked operations:</strong> <code>eval()</code>, <code>exec()</code>, <code>__import__()</code></li>
-        </ul>
+          <h2>Layer 2: Sandbox Execution (Python & JS)</h2>
+          <p>Python snippets are executed in isolated subprocesses with resource limits. JavaScript/TypeScript snippets
+            are validated via <code>node --check</code>. This catches runtime and syntax errors that static analysis
+            misses.</p>
+          <ul>
+            <li><strong>Python Timeout:</strong> 5 seconds, 50MB limit via <code>ulimit</code></li>
+            <li><strong>Python Blocked ops:</strong> <code>os</code>, <code>subprocess</code>, <code>socket</code>,
+              <code>eval()</code></li>
+            <li><strong>JS Validation:</strong> Fast syntax compilation check via Node.js</li>
+          </ul>
 
-        <h2>Layer 3: Amazon Bedrock AI (Always Attempted)</h2>
-        <p>OASIS sends the code, static analysis results, and sandbox errors to Claude 3 via Amazon Bedrock for deeper
-          reasoning. The AI reviews for logic errors, edge cases, performance issues, and subtle bugs.</p>
-        <ul>
-          <li><strong>Graceful fallback</strong> — If Bedrock is unavailable, static + sandbox results are used</li>
-          <li><strong>Confidence scoring</strong> — AI fixes get 0.90 confidence vs 0.75 for static-only fixes</li>
-        </ul>
+          <h2>Layer 3: Amazon Bedrock AI (Always Attempted)</h2>
+          <p>OASIS sends the code, static analysis results, and sandbox errors to Claude 3 via Amazon Bedrock for deeper
+            reasoning. The AI reviews for logic errors, edge cases, performance issues, and subtle bugs.</p>
+          <ul>
+            <li><strong>Graceful fallback</strong> — If Bedrock is unavailable, static + sandbox results are used</li>
+            <li><strong>Confidence scoring</strong> — AI fixes get 0.90 confidence vs 0.75 for static-only fixes</li>
+          </ul>
 
-        <h2>Layer 4: Diff Scanning</h2>
-        <p>OASIS also scans the raw diff patch of documentation files for code-like patterns outside of fenced code
-          blocks. This catches broken code written as plain text.</p>
-      </article>
+          <h2>Layer 4: Diff Scanning</h2>
+          <p>OASIS also scans the raw diff patch of documentation files for code-like patterns outside of fenced code
+            blocks. This catches broken code written as plain text.</p>
+        </article>
 
-      <!-- PAGE: demo -->
-      <article class="page hidden" id="page-demo">
-        <h1>Live Demo</h1>
-        <div class="demo-presets">
-          <strong>Load example:</strong>
-          <button class="preset-btn active" data-lang="python" data-code="def greet(name, age):
+        <!-- PAGE: demo -->
+        <article class="page hidden" id="page-demo">
+          <h1>Live Demo</h1>
+          <div class="demo-presets">
+            <strong>Load example:</strong>
+            <button class="preset-btn active" data-lang="python" data-code="def greet(name, age):
     return &quot;Hello &quot; + name
 
 # Bug: missing argument 'age'
 print(greet(&quot;Alice&quot;))">Python</button>
-          <button class="preset-btn" data-lang="javascript" data-code="// Bug: scanf is a C function, not JavaScript
+            <button class="preset-btn" data-lang="javascript" data-code="// Bug: scanf is a C function, not JavaScript
 // Bug: $$ is invalid syntax
 const result = scanf(&quot;%d&quot;);
 console.log($$result);
@@ -951,152 +961,155 @@ console.log($$result);
 function add(a, b {
     return a + b;
 }">JavaScript</button>
-          <button class="preset-btn" data-lang="unknown" data-code="// Bug: mixed Python + C patterns
+            <button class="preset-btn" data-lang="unknown" data-code="// Bug: mixed Python + C patterns
 print(hello);
 ptf(scanf($$))
 
 def calculate(x, y:
     return x + y">Mixed / Broken</button>
-          <button class="preset-btn" data-lang="unknown" data-code="function fetchData(url) {
+            <button class="preset-btn" data-lang="unknown" data-code="function fetchData(url) {
     const response = fetch(url
     return response.json(;
 }
 
 result = fetchData(&quot;https://api.example.com&quot;)
 console.log(result);">Auto-detect</button>
-        </div>
-        <div class="demo-area">
-          <div class="demo-input-area">
-            <div class="codeblock-header">
-              <span>Code Input</span>
-              <select id="demoLang" class="lang-select">
-                <option value="python">Python</option>
-                <option value="javascript">JavaScript</option>
-                <option value="unknown">Auto-detect</option>
-              </select>
-            </div>
-            <textarea id="demoCode" spellcheck="false">def greet(name, age):
+          </div>
+          <div class="demo-area">
+            <div class="demo-input-area">
+              <div class="codeblock-header">
+                <span>Code Input</span>
+                <select id="demoLang" class="lang-select">
+                  <option value="python">Python</option>
+                  <option value="javascript">JavaScript</option>
+                  <option value="unknown">Auto-detect</option>
+                </select>
+              </div>
+              <textarea id="demoCode" spellcheck="false">def greet(name, age):
     return "Hello " + name
 
 # Bug: missing argument 'age'
 print(greet("Alice"))</textarea>
-            <button class="btn-analyze" id="analyzeBtn">🔍 Analyze Code</button>
+              <button class="btn-analyze" id="analyzeBtn">🔍 Analyze Code</button>
+            </div>
+            <div class="demo-output-area" id="demoOutput">
+              <p class="placeholder">Click <strong>Analyze Code</strong> to see results.</p>
+            </div>
           </div>
-          <div class="demo-output-area" id="demoOutput">
-            <p class="placeholder">Click <strong>Analyze Code</strong> to see results.</p>
-          </div>
-        </div>
-        <p class="small">This calls <code>POST /api/analyze</code> on the running OASIS backend. For AI-powered healing
-          (Bedrock), trigger OASIS via a real PR.</p>
-      </article>
+          <p class="small">This calls <code>POST /api/analyze</code> on the running OASIS backend. For AI-powered
+            healing
+            (Bedrock), trigger OASIS via a real PR.</p>
+        </article>
 
-      <!-- PAGE: vision -->
-      <article class="page hidden" id="page-vision">
-        <h1>Future Vision</h1>
-        <p>OASIS is actively evolving. Here is our roadmap:</p>
+        <!-- PAGE: vision -->
+        <article class="page hidden" id="page-vision">
+          <h1>Future Vision</h1>
+          <p>OASIS is actively evolving. Here is our roadmap:</p>
 
-        <h2>🎯 Short-term (v0.2)</h2>
-        <ul>
-          <li><strong>Auto-commit fixes</strong> — Instead of just commenting, OASIS will push fix commits to the PR
-            branch</li>
-          <li><strong>PR status checks</strong> — Block merge if broken code is detected (GitHub Check Runs API)</li>
-          <li><strong>Richer JS/TS analysis</strong> — Using <code>node --check</code> and ESLint integration</li>
-          <li><strong>Diff-aware healing</strong> — Only analyze and fix newly added/changed code</li>
-        </ul>
+          <h2>🎯 Short-term (v0.2)</h2>
+          <ul>
+            <li><strong>Auto-commit fixes</strong> — Instead of just commenting, OASIS will push fix commits to the PR
+              branch</li>
+            <li><strong>PR status checks</strong> — Block merge if broken code is detected (GitHub Check Runs API)</li>
+            <li><strong>Richer JS/TS analysis</strong> — Using <code>node --check</code> and ESLint integration</li>
+            <li><strong>Diff-aware healing</strong> — Only analyze and fix newly added/changed code</li>
+          </ul>
 
-        <h2>🚀 Mid-term (v0.3)</h2>
-        <ul>
-          <li><strong>Dashboard UI</strong> — Web dashboard for viewing analysis history, stats, and configuration</li>
-          <li><strong>Multi-repo support</strong> — Manage OASIS across an entire GitHub organization</li>
-          <li><strong>Custom rules</strong> — Define custom analysis rules per-project</li>
-          <li><strong>CI/CD integration</strong> — GitHub Actions workflow for local analysis</li>
-          <li><strong>Code mapping</strong> — Track relationships between code changes and documentation</li>
-        </ul>
+          <h2>🚀 Mid-term (v0.3)</h2>
+          <ul>
+            <li><strong>Dashboard UI</strong> — Web dashboard for viewing analysis history, stats, and configuration
+            </li>
+            <li><strong>Multi-repo support</strong> — Manage OASIS across an entire GitHub organization</li>
+            <li><strong>Custom rules</strong> — Define custom analysis rules per-project</li>
+            <li><strong>CI/CD integration</strong> — GitHub Actions workflow for local analysis</li>
+            <li><strong>Code mapping</strong> — Track relationships between code changes and documentation</li>
+          </ul>
 
-        <h2>🌍 Long-term Vision</h2>
-        <ul>
-          <li><strong>Documentation drift detection</strong> — Detect when API changes make docs outdated</li>
-          <li><strong>Auto-generation</strong> — Generate documentation from code changes</li>
-          <li><strong>Community marketplace</strong> — Share and install custom analysis plugins</li>
-          <li><strong>Multi-LLM support</strong> — Support for OpenAI, Gemini, and other models alongside Bedrock</li>
-        </ul>
-      </article>
+          <h2>🌍 Long-term Vision</h2>
+          <ul>
+            <li><strong>Documentation drift detection</strong> — Detect when API changes make docs outdated</li>
+            <li><strong>Auto-generation</strong> — Generate documentation from code changes</li>
+            <li><strong>Community marketplace</strong> — Share and install custom analysis plugins</li>
+            <li><strong>Multi-LLM support</strong> — Support for OpenAI, Gemini, and other models alongside Bedrock</li>
+          </ul>
+        </article>
 
-      <!-- PAGE: transparency -->
-      <article class="page hidden" id="page-transparency">
-        <h1>Transparency</h1>
-        <p>OASIS is committed to being transparent about how it works, its limitations, and its data handling practices.
-        </p>
+        <!-- PAGE: transparency -->
+        <article class="page hidden" id="page-transparency">
+          <h1>Transparency</h1>
+          <p>OASIS is committed to being transparent about how it works, its limitations, and its data handling
+            practices.
+          </p>
 
-        <h2>What OASIS Accesses</h2>
-        <ul>
-          <li><strong>PR metadata</strong> — PR number, title, changed files list</li>
-          <li><strong>File contents</strong> — Only the files changed in the PR (fetched via GitHub API)</li>
-          <li><strong>Diff patches</strong> — The diff of changed files to identify new/modified code</li>
-        </ul>
+          <h2>What OASIS Accesses</h2>
+          <ul>
+            <li><strong>PR metadata</strong> — PR number, title, changed files list</li>
+            <li><strong>File contents</strong> — Only the files changed in the PR (fetched via GitHub API)</li>
+            <li><strong>Diff patches</strong> — The diff of changed files to identify new/modified code</li>
+          </ul>
 
-        <h2>What OASIS Does NOT Do</h2>
-        <ul>
-          <li>❌ Does not execute non-Python code — those languages use static + AI analysis only</li>
-          <li>❌ Does not store your source code permanently</li>
-          <li>❌ Does not have write access to your repository (only posts comments)</li>
-          <li>❌ Does not access files outside the PR scope</li>
-        </ul>
-        <div class="note"><strong>Note:</strong> Python snippets ARE executed in an isolated sandbox (subprocess with
-          timeout and memory limits), but with dangerous imports blocked and no network access.</div>
+          <h2>What OASIS Does NOT Do</h2>
+          <ul>
+            <li>❌ Does not execute non-Python code — those languages use static + AI analysis only</li>
+            <li>❌ Does not store your source code permanently</li>
+            <li>❌ Does not have write access to your repository (only posts comments)</li>
+            <li>❌ Does not access files outside the PR scope</li>
+          </ul>
+          <div class="note"><strong>Note:</strong> Python snippets ARE executed in an isolated sandbox (subprocess with
+            timeout and memory limits), but with dangerous imports blocked and no network access.</div>
 
-        <h2>AI Transparency</h2>
-        <ul>
-          <li>Every PR comment clearly states whether fixes came from <strong>static analysis</strong> or
-            <strong>Bedrock AI</strong>
-          </li>
-          <li>Confidence scores are included so you know how certain the fix is</li>
-          <li>AI suggestions are always marked with <em>"Enhanced fix using Claude 3 via Amazon Bedrock"</em></li>
-          <li>If AI is unavailable, the comment explicitly states only static analysis was used</li>
-        </ul>
+          <h2>AI Transparency</h2>
+          <ul>
+            <li>Every PR comment clearly states whether fixes came from <strong>static analysis</strong> or
+              <strong>Bedrock AI</strong>
+            </li>
+            <li>Confidence scores are included so you know how certain the fix is</li>
+            <li>AI suggestions are always marked with <em>"Enhanced fix using Claude 3 via Amazon Bedrock"</em></li>
+            <li>If AI is unavailable, the comment explicitly states only static analysis was used</li>
+          </ul>
 
-        <h2>Open Source</h2>
-        <p>OASIS aims to be fully open source. All analysis logic, webhook handling, and API code is available for
-          review. No hidden processing or external calls beyond the documented ones (GitHub API + Bedrock API).</p>
+          <h2>Open Source</h2>
+          <p>OASIS aims to be fully open source. All analysis logic, webhook handling, and API code is available for
+            review. No hidden processing or external calls beyond the documented ones (GitHub API + Bedrock API).</p>
 
-        <h2>Data Flow</h2>
-        <table>
-          <thead>
-            <tr>
-              <th>Stage</th>
-              <th>Data</th>
-              <th>Destination</th>
-              <th>Retention</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>Webhook</td>
-              <td>PR metadata</td>
-              <td>OASIS API server</td>
-              <td>Task duration only</td>
-            </tr>
-            <tr>
-              <td>Analysis</td>
-              <td>Code snippets</td>
-              <td>Static analyzer (local)</td>
-              <td>Not stored</td>
-            </tr>
-            <tr>
-              <td>AI Healing</td>
-              <td>Code + errors</td>
-              <td>Amazon Bedrock (AWS)</td>
-              <td>Per AWS policy</td>
-            </tr>
-            <tr>
-              <td>Result</td>
-              <td>PR comment</td>
-              <td>GitHub API</td>
-              <td>Permanent (on PR)</td>
-            </tr>
-          </tbody>
-        </table>
-      </article>
+          <h2>Data Flow</h2>
+          <table>
+            <thead>
+              <tr>
+                <th>Stage</th>
+                <th>Data</th>
+                <th>Destination</th>
+                <th>Retention</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Webhook</td>
+                <td>PR metadata</td>
+                <td>OASIS API server</td>
+                <td>Task duration only</td>
+              </tr>
+              <tr>
+                <td>Analysis</td>
+                <td>Code snippets</td>
+                <td>Static analyzer (local)</td>
+                <td>Not stored</td>
+              </tr>
+              <tr>
+                <td>AI Healing</td>
+                <td>Code + errors</td>
+                <td>Amazon Bedrock (AWS)</td>
+                <td>Per AWS policy</td>
+              </tr>
+              <tr>
+                <td>Result</td>
+                <td>PR comment</td>
+                <td>GitHub API</td>
+                <td>Permanent (on PR)</td>
+              </tr>
+            </tbody>
+          </table>
+        </article>
 
     </main>
   </div>

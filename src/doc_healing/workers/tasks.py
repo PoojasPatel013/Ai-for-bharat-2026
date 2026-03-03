@@ -6,6 +6,7 @@ with both Redis and in-memory queue backends.
 """
 
 import logging
+import base64
 from typing import Any, Dict, Optional
 
 from doc_healing.queue.factory import get_queue_backend
@@ -57,6 +58,29 @@ def process_github_webhook(payload: Dict[str, Any]) -> None:
     if not (head_sha and repo_full_name and comments_url):
         logger.warning("Missing head_sha, repo_full_name, or comments_url")
         return
+    
+    # Headers needed for Check Runs API
+    headers["Accept"] = "application/vnd.github.v3+json"
+    
+    with httpx.Client(timeout=30.0) as client:
+        # Step 0: Create Check Run (In Progress)
+        check_run_id = None
+        try:
+            check_run_payload = {
+                "name": "OASIS Code Analysis",
+                "head_sha": head_sha,
+                "status": "in_progress",
+                "started_at": __import__("datetime").datetime.now(__import__("datetime").timezone.utc).isoformat()
+            }
+            checks_url = f"https://api.github.com/repos/{repo_full_name}/check-runs"
+            checks_resp = client.post(checks_url, json=check_run_payload, headers=headers)
+            if checks_resp.status_code == 201:
+                check_run_id = checks_resp.json().get("id")
+                logger.info(f"Created GitHub check run {check_run_id}")
+            else:
+                logger.warning(f"Failed to create check run: {checks_resp.status_code} {checks_resp.text}")
+        except Exception as e:
+            logger.error(f"Error creating check run: {e}")
     
     DOC_EXTENSIONS = {".md", ".rst", ".txt", ".mdx"}
     SUPPORTED_LANGS = {"python", "javascript", "js", "java", "bash", "sh", "typescript", "ts",
@@ -192,6 +216,10 @@ def process_github_webhook(payload: Dict[str, Any]) -> None:
         
         logger.info(f"Found {len(all_snippets)} code snippet(s) across {len(doc_files)} documentation file(s)")
         
+        # Store data needed for auto-commits
+        fixes_to_commit = []
+        head_branch = payload.get("pull_request", {}).get("head", {}).get("ref")
+        
         # Step 4: Heal snippets
         snippet_results = []
         for idx, snippet in enumerate(all_snippets):
@@ -224,6 +252,14 @@ def process_github_webhook(payload: Dict[str, Any]) -> None:
                     method = "\n\n<sub>" + " · ".join(changes) + "</sub>"
                 
                 if healed and healed_code and healed_code.strip() != code.strip():
+                    # Queue for auto-commit if we have a branch
+                    if head_branch:
+                        fixes_to_commit.append({
+                            "file": fname,
+                            "old_code": code,
+                            "new_code": healed_code.rstrip()
+                        })
+                    
                     snippet_results.append(
                         f"#### `{fname}` — Issues Found\n\n"
                         f"```{lang}\n{code}\n```"
@@ -249,6 +285,47 @@ def process_github_webhook(payload: Dict[str, Any]) -> None:
                     f"```{lang}\n{code}\n```\n"
                     f"Could not analyze: `{str(e)[:80]}`"
                 )
+        
+        # Step 4.5: Auto-commit all healed snippets
+        if fixes_to_commit:
+            logger.info(f"Applying {len(fixes_to_commit)} auto-commit fixes...")
+            for fix in fixes_to_commit:
+                try:
+                    # 1. Get current file content and SHA
+                    file_url = f"https://api.github.com/repos/{repo_full_name}/contents/{fix['file']}?ref={head_branch}"
+                    file_resp = client.get(file_url, headers=headers)
+                    if file_resp.status_code != 200:
+                        logger.error(f"Failed to get file contents for {fix['file']}")
+                        continue
+                    
+                    file_data = file_resp.json()
+                    file_sha = file_data["sha"]
+                    content_b64 = file_data["content"]
+                    current_content = base64.b64decode(content_b64).decode("utf-8")
+                    
+                    # 2. Apply fix (simple string replacement)
+                    if fix['old_code'] in current_content:
+                        new_content = current_content.replace(fix['old_code'], fix['new_code'])
+                        
+                        # Only commit if we actually changed something
+                        if new_content != current_content:
+                            logger.info(f"Committing fix for {fix['file']}")
+                            commit_payload = {
+                                "message": "🤖 OASIS Auto-Fix: Corrected code snippet",
+                                "content": base64.b64encode(new_content.encode("utf-8")).decode("utf-8"),
+                                "sha": file_sha,
+                                "branch": head_branch
+                            }
+                            commit_resp = client.put(file_url, json=commit_payload, headers=headers)
+                            if commit_resp.status_code in (200, 201):
+                                logger.info(f"Successfully committed fix to {fix['file']}")
+                                snippet_results.append(f"✅ **Auto-committed fix** for `{fix['file']}` directly to this branch!")
+                            else:
+                                logger.error(f"Failed to commit fix: {commit_resp.text}")
+                    else:
+                        logger.warning(f"Could not find exact original code block in {fix['file']} to replace")
+                except Exception as e:
+                    logger.error(f"Error during auto-commit for {fix['file']}: {e}")
         
         # Step 4b: Analyze changed code files directly
         for code_file in code_files:
@@ -351,6 +428,29 @@ def process_github_webhook(payload: Dict[str, Any]) -> None:
             post_resp = client.post(comments_url, json={"body": comment_body}, headers=headers)
         
         logger.info(f"GitHub API response: {post_resp.status_code}")
+        
+        # Step 6: Update Check Run (Completed)
+        if check_run_id:
+            try:
+                # If there are any "Issues Found" in snippet_results, checking if we auto-fixed them all
+                has_unfixed_errors = any("Issues Found" in res and "Auto-committed fix" not in res for res in snippet_results)
+                
+                conclusion = "failure" if has_unfixed_errors else "success"
+                check_run_payload = {
+                    "status": "completed",
+                    "conclusion": conclusion,
+                    "completed_at": __import__("datetime").datetime.now(__import__("datetime").timezone.utc).isoformat(),
+                    "output": {
+                        "title": "Analysis Completed",
+                        "summary": f"{file_summary_str}. {'Found issues.' if has_unfixed_errors else 'Everything looks good.'}",
+                        "text": comment_body
+                    }
+                }
+                checks_url = f"https://api.github.com/repos/{repo_full_name}/check-runs/{check_run_id}"
+                client.patch(checks_url, json=check_run_payload, headers=headers)
+                logger.info(f"Updated GitHub check run {check_run_id} to {conclusion}")
+            except Exception as e:
+                logger.error(f"Error updating check run {check_run_id}: {e}")
     
     logger.info("GitHub webhook processed successfully")
 

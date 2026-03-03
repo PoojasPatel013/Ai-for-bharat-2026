@@ -36,18 +36,27 @@ The system is built as a cloud-native microservices architecture:
 
 ### Tech Stack
 
-| Layer | Technology | Purpose |
+| Tech Layer | Technology | Purpose |
 |-------|-----------|---------|
 | API | Python 3.11 + FastAPI | Webhook handlers, REST API |
 | Queue | Redis Queue (RQ) | Async task processing (3 queues) |
 | AI | Amazon Bedrock (Claude 3) | Code healing via `boto3` |
-| Sandbox | `subprocess` + `ulimit` | Isolated Python execution (5s timeout, 50MB) |
+| Sandbox (Py) | `subprocess` + `ulimit` | Isolated Python execution (5s timeout, 50MB) |
+| Sandbox (JS) | `node --check` | Fast JS/TS syntax validation |
 | Database | PostgreSQL + SQLAlchemy | Persistent storage (9 tables, Alembic migrations) |
 | Auth | HMAC-SHA256 | Webhook signature verification |
 | Deployment | AWS ECS Fargate + ALB | Container orchestration |
 | Secrets | AWS Secrets Manager | Credential management |
 | CI/CD | GitHub Actions | Build → Test → Deploy |
 
+
+### Interactive Judging / Live Testing
+
+To test the OASIS bot live during the hackathon:
+1. Fork this repository.
+2. Edit `README.md` (or any markdown file) and add a code block with some intentional bugs.
+3. Open a Pull Request from your fork back to this main repository.
+4. Watch OASIS instantly analyze your PR, post a detailed comment with detected errors (using static analysis and Bedrock AI), and automatically commit a fix!
 
 ## Quick Start
 
