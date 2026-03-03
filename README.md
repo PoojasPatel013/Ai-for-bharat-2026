@@ -1,4 +1,4 @@
-# Self-Healing Documentation Engine
+# OASIS: Self-Healing Documentation Engine
 
 A GitHub/GitLab bot that treats documentation like code, ensuring technical accuracy without manual intervention.
 
