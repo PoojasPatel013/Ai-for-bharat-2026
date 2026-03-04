@@ -166,8 +166,66 @@ def _generate_fix(code: str, errors: List[Dict], func_defs: Dict) -> str:
                     line
                 )
                 lines[line_no - 1] = line
+        
+        elif err_type == "SyntaxError":
+            # Attempt simple bracket/paren fixes
+            if "EOF" in error["message"] or "unexpected" in error["message"].lower():
+                # Count unmatched brackets
+                full = "\n".join(lines)
+                open_parens = full.count("(") - full.count(")")
+                open_brackets = full.count("[") - full.count("]")
+                open_braces = full.count("{") - full.count("}")
+                suffix = ")" * max(0, open_parens) + "]" * max(0, open_brackets) + "}" * max(0, open_braces)
+                if suffix:
+                    lines[-1] = lines[-1] + suffix
     
     return "\n".join(lines)
+
+
+def generate_fix_with_ai(code: str, language: str, errors: List[Dict]) -> Optional[str]:
+    """Generate a fix for any language using Claude 3 Haiku via Bedrock.
+    
+    Uses specialized prompts for C/C++ security issues and a general
+    multi-language prompt for everything else.
+    
+    Returns the fixed code string, or None if AI is unavailable.
+    """
+    try:
+        from doc_healing.llm.bedrock_client import BedrockLLMClient
+        from doc_healing.llm.prompts import (
+            C_SECURITY_SYSTEM_PROMPT,
+            MULTILANG_FIX_SYSTEM_PROMPT,
+            build_c_security_fix_prompt,
+            build_multilang_fix_prompt,
+        )
+        
+        error_text = "; ".join(e["message"] for e in errors)
+        lang = language.lower()
+        
+        # Use specialized C/C++ security prompt when unsafe functions are detected
+        unsafe_keywords = ["scanf", "gets", "strcpy", "sprintf", "unsafe"]
+        is_c_security = lang in ("c", "cpp", "c++") and any(
+            kw in error_text.lower() for kw in unsafe_keywords
+        )
+        
+        if is_c_security:
+            system_prompt = C_SECURITY_SYSTEM_PROMPT
+            prompt = build_c_security_fix_prompt(code, error_text)
+        else:
+            system_prompt = MULTILANG_FIX_SYSTEM_PROMPT
+            prompt = build_multilang_fix_prompt(code, language, error_text)
+        
+        client = BedrockLLMClient()
+        fix = client.generate_correction(prompt=prompt, system_prompt=system_prompt)
+        
+        if fix and fix.strip() and fix.strip() != code.strip():
+            logger.info(f"AI generated fix for {language} code ({len(errors)} error(s))")
+            return fix.strip()
+        
+        return None
+    except Exception as e:
+        logger.warning(f"AI fix generation unavailable for {language}: {str(e)[:100]}")
+        return None
 
 
 def analyze_javascript_code(code: str) -> Dict[str, Any]:
@@ -241,11 +299,119 @@ def analyze_javascript_code(code: str) -> Dict[str, Any]:
                 "detail": f"Line {line_no}: '$$' is not valid JavaScript syntax"
             })
     
+    # Attempt AI fix generation for detected errors
+    fixed_code = None
+    if errors:
+        fixed_code = generate_fix_with_ai(code, "javascript", errors)
+    
     return {
         "errors": errors,
-        "fixed_code": None,
+        "fixed_code": fixed_code,
         "has_issues": len(errors) > 0,
         "analysis_method": "static_js"
+    }
+
+
+def analyze_c_code(code: str) -> Dict[str, Any]:
+    """Analyze C/C++ code for security vulnerabilities and common bugs.
+    
+    Detects:
+      - Unsafe functions: scanf, gets, strcpy, sprintf (buffer overflow risks)
+      - Format string vulnerabilities
+      - Missing #include for used functions
+      - Mismatched brackets
+      - Nested function calls that make no sense (e.g., printf(scanf()))
+    """
+    errors = []
+    
+    # Check mismatched brackets
+    bracket_errors = _check_brackets(code)
+    errors.extend(bracket_errors)
+    
+    # Unsafe function mapping: function -> (severity, safe_alternative, reason)
+    unsafe_functions = {
+        "gets": ("critical", "fgets(buf, sizeof(buf), stdin)",
+                 "gets() has no bounds checking — buffer overflow vulnerability (CWE-120)"),
+        "scanf": ("warning", "fgets() + sscanf() or scanf_s()",
+                  "scanf() with %s has no bounds checking — use width specifiers or fgets()"),
+        "strcpy": ("warning", "strncpy(dst, src, sizeof(dst)-1)",
+                   "strcpy() has no bounds checking — use strncpy() with explicit size"),
+        "sprintf": ("warning", "snprintf(buf, sizeof(buf), ...)",
+                    "sprintf() has no bounds checking — use snprintf()"),
+        "strcat": ("warning", "strncat(dst, src, sizeof(dst)-strlen(dst)-1)",
+                   "strcat() has no bounds checking — use strncat()"),
+    }
+    
+    lines = code.split("\n")
+    has_include_stdio = bool(re.search(r'#include\s*<stdio\.h>', code))
+    has_include_string = bool(re.search(r'#include\s*<string\.h>', code))
+    uses_printf = bool(re.search(r'\bprintf\s*\(', code))
+    uses_scanf = bool(re.search(r'\bscanf\s*\(', code))
+    uses_strcpy = bool(re.search(r'\bstrcpy\s*\(', code))
+    
+    for line_no, line in enumerate(lines, 1):
+        stripped = line.strip()
+        if not stripped or stripped.startswith("//") or stripped.startswith("/*"):
+            continue
+        
+        # Check unsafe functions
+        for func, (severity, safe_alt, reason) in unsafe_functions.items():
+            if re.search(rf'\b{func}\s*\(', stripped):
+                err_type = "SecurityWarning" if severity == "warning" else "SecurityError"
+                errors.append({
+                    "type": err_type,
+                    "message": f"Unsafe function '{func}()': {reason}. Use {safe_alt}",
+                    "line": line_no,
+                    "detail": f"Line {line_no}: Replace {func}() with {safe_alt}"
+                })
+        
+        # Nested nonsense: printf(scanf()) makes no sense
+        if re.search(r'\bprintf\s*\(\s*scanf\s*\(', stripped):
+            errors.append({
+                "type": "SyntaxError",
+                "message": "printf(scanf()) is invalid — scanf returns int (count of items read), not a string",
+                "line": line_no,
+                "detail": f"Line {line_no}: scanf() returns an int, cannot be used as printf() argument directly"
+            })
+        
+        # Format string without arguments: printf(var) instead of printf("%s", var)
+        printf_match = re.search(r'\bprintf\s*\(\s*(\w+)\s*\)', stripped)
+        if printf_match and not printf_match.group(1).startswith('"'):
+            var = printf_match.group(1)
+            if var not in ("NULL", "stdin", "stdout", "stderr"):
+                errors.append({
+                    "type": "SecurityWarning",
+                    "message": f"Format string vulnerability: printf({var}) — use printf(\"%s\", {var}) instead",
+                    "line": line_no,
+                    "detail": f"Line {line_no}: Direct variable in printf() is a format string attack vector"
+                })
+    
+    # Missing includes
+    if (uses_printf or uses_scanf) and not has_include_stdio:
+        errors.append({
+            "type": "Warning",
+            "message": "Missing '#include <stdio.h>' — required for printf/scanf",
+            "line": 1,
+            "detail": "Add #include <stdio.h> at the top of the file"
+        })
+    if uses_strcpy and not has_include_string:
+        errors.append({
+            "type": "Warning",
+            "message": "Missing '#include <string.h>' — required for strcpy/strncpy",
+            "line": 1,
+            "detail": "Add #include <string.h> at the top of the file"
+        })
+    
+    # Attempt AI fix generation for detected errors
+    fixed_code = None
+    if errors:
+        fixed_code = generate_fix_with_ai(code, "c", errors)
+    
+    return {
+        "errors": errors,
+        "fixed_code": fixed_code,
+        "has_issues": len(errors) > 0,
+        "analysis_method": "static_c"
     }
 
 
@@ -350,9 +516,14 @@ def analyze_generic_code(code: str, language: str = "unknown") -> Dict[str, Any]
                 "detail": f"Line {e.lineno}: {e.msg}"
             })
     
+    # Attempt AI fix generation for detected errors
+    fixed_code = None
+    if errors:
+        fixed_code = generate_fix_with_ai(code, language, errors)
+    
     return {
         "errors": errors,
-        "fixed_code": None,
+        "fixed_code": fixed_code,
         "has_issues": len(errors) > 0,
         "analysis_method": "static_generic"
     }
@@ -478,11 +649,17 @@ def analyze_code(code: str, language: str = None) -> Dict[str, Any]:
     lang = language.lower()
     
     if lang in ("python", "py"):
-        return analyze_python_code(code)
+        result = analyze_python_code(code)
     elif lang in ("javascript", "js", "typescript", "ts"):
-        return analyze_javascript_code(code)
+        result = analyze_javascript_code(code)
+    elif lang in ("c", "cpp", "c++"):
+        result = analyze_c_code(code)
     else:
-        return analyze_generic_code(code, language=lang)
+        result = analyze_generic_code(code, language=lang)
+    
+    # Attach detected language to result for PR comment display
+    result["detected_language"] = lang
+    return result
 
 
 def format_errors_markdown(errors: List[Dict]) -> str:

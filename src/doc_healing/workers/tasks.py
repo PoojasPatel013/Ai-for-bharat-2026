@@ -11,8 +11,14 @@ from typing import Any, Dict, Optional
 
 from doc_healing.queue.factory import get_queue_backend
 from doc_healing.llm.bedrock_client import BedrockLLMClient
-from doc_healing.llm.prompts import build_healing_prompt, HEALING_SYSTEM_PROMPT
-from doc_healing.llm.static_analyzer import analyze_python_code, analyze_code, detect_language, format_errors_markdown
+from doc_healing.llm.prompts import (
+    build_healing_prompt, HEALING_SYSTEM_PROMPT,
+    MULTILANG_FIX_SYSTEM_PROMPT, build_retry_fix_prompt,
+)
+from doc_healing.llm.static_analyzer import (
+    analyze_python_code, analyze_code, detect_language,
+    format_errors_markdown,
+)
 from doc_healing.llm.sandbox import execute_code
 
 logger = logging.getLogger(__name__)
@@ -216,6 +222,16 @@ def process_github_webhook(payload: Dict[str, Any]) -> None:
         
         logger.info(f"Found {len(all_snippets)} code snippet(s) across {len(doc_files)} documentation file(s)")
         
+        # Build language statistics for summary
+        lang_counts = {}
+        for snippet in all_snippets:
+            lang = snippet["lang"]
+            lang_counts[lang] = lang_counts.get(lang, 0) + 1
+        if lang_counts:
+            lang_stats = ", ".join(f"{count}× {lang.capitalize()}" for lang, count in sorted(lang_counts.items()))
+            summary_lines.append(f"🔍 **Analyzed:** {lang_stats}")
+            summary_lines.append("")
+        
         # Store data needed for auto-commits
         fixes_to_commit = []
         head_branch = payload.get("pull_request", {}).get("head", {}).get("ref")
@@ -254,22 +270,57 @@ def process_github_webhook(payload: Dict[str, Any]) -> None:
                 if healed and healed_code and healed_code.strip() != code.strip():
                     # Queue for auto-commit if we have a branch
                     if head_branch:
+                        # Build descriptive info for commit msg
+                        fix_desc_parts = []
+                        for e in static_errors[:2]:  # First 2 errors for brevity
+                            fix_desc_parts.append(e.get("type", "issue"))
+                        fix_desc = ", ".join(fix_desc_parts) if fix_desc_parts else "code issues"
+                        
                         fixes_to_commit.append({
                             "file": fname,
                             "old_code": code,
-                            "new_code": healed_code.rstrip()
+                            "new_code": healed_code.rstrip(),
+                            "fix_description": fix_desc,
                         })
                     
+                    # Build diff display
+                    diff_lines = []
+                    old_lines = code.strip().split("\n")
+                    new_lines = healed_code.strip().split("\n")
+                    for ol in old_lines:
+                        if ol not in new_lines:
+                            diff_lines.append(f"- {ol}")
+                    for nl in new_lines:
+                        if nl not in old_lines:
+                            diff_lines.append(f"+ {nl}")
+                    
+                    if diff_lines:
+                        diff_block = "\n".join(diff_lines)
+                        fix_display = (
+                            f"**Suggested fix:**\n```diff\n{diff_block}\n```\n\n"
+                            f"<details><summary>Full corrected code</summary>\n\n"
+                            f"```{lang}\n{healed_code.strip()}\n```\n</details>"
+                        )
+                    else:
+                        fix_display = f"**Suggested fix:**\n```{lang}\n{healed_code.strip()}\n```"
+                    
+                    # Confidence badge
+                    confidence = result.get("confidence", 0.0)
+                    badge = "✅" if confidence >= 0.90 else "⚠️" if confidence >= 0.60 else "🔍"
+                    conf_pct = int(confidence * 100)
+                    
                     snippet_results.append(
-                        f"#### `{fname}` — Issues Found\n\n"
+                        f"#### `{fname}` — Issues Found {badge}\n"
+                        f"**Language:** `{lang}` · **Confidence:** {conf_pct}%\n\n"
                         f"```{lang}\n{code}\n```"
                         f"{error_detail}\n\n"
-                        f"**Suggested fix:**\n```{lang}\n{healed_code.strip()}\n```"
+                        f"{fix_display}"
                         f"{method}"
                     )
                 elif static_errors:
                     snippet_results.append(
                         f"#### `{fname}` — Issues Found\n"
+                        f"**Language:** `{lang}`\n\n"
                         f"```{lang}\n{code}\n```"
                         f"{error_detail}"
                     )
@@ -311,7 +362,7 @@ def process_github_webhook(payload: Dict[str, Any]) -> None:
                         if new_content != current_content:
                             logger.info(f"Committing fix for {fix['file']}")
                             commit_payload = {
-                                "message": "🤖 OASIS Auto-Fix: Corrected code snippet",
+                                "message": f"🤖 OASIS: Fixed {fix.get('fix_description', 'code issues')} in {fix['file']}",
                                 "content": base64.b64encode(new_content.encode("utf-8")).decode("utf-8"),
                                 "sha": file_sha,
                                 "branch": head_branch
@@ -608,6 +659,67 @@ def validate_documentation_file(file_path: str, content: str) -> Dict[str, Any]:
     return result
 
 
+def _validate_and_retry_fix(
+    original_code: str,
+    ai_fix: str,
+    language: str,
+    max_retries: int = 2,
+) -> Optional[str]:
+    """Validate an AI-generated fix by re-running static analysis.
+    
+    If the fix still has issues, send error feedback back to Bedrock
+    and retry up to max_retries times.
+    
+    Returns the validated fix, or None if all retries fail.
+    """
+    current_fix = ai_fix
+    
+    for attempt in range(1, max_retries + 1):
+        # Re-run static analysis on the fix
+        validation = analyze_code(current_fix, language)
+        
+        if not validation["has_issues"]:
+            logger.info(f"AI fix validated successfully (attempt {attempt})")
+            return current_fix
+        
+        # Fix still has issues — retry with error feedback
+        error_feedback = "; ".join(e["message"] for e in validation["errors"])
+        logger.info(
+            f"AI fix still has {len(validation['errors'])} issue(s) on attempt {attempt}, "
+            f"retrying with feedback: {error_feedback[:100]}"
+        )
+        
+        try:
+            retry_prompt = build_retry_fix_prompt(
+                original_code=original_code,
+                previous_fix=current_fix,
+                language=language,
+                validation_errors=error_feedback,
+            )
+            client = BedrockLLMClient()
+            new_fix = client.generate_correction(
+                prompt=retry_prompt,
+                system_prompt=MULTILANG_FIX_SYSTEM_PROMPT,
+            )
+            
+            if new_fix and new_fix.strip() and new_fix.strip() != original_code.strip():
+                current_fix = new_fix.strip()
+            else:
+                logger.warning(f"Bedrock returned empty/identical fix on retry {attempt}")
+                break
+        except Exception as e:
+            logger.warning(f"Bedrock retry {attempt} failed: {str(e)[:100]}")
+            break
+    
+    # Final validation check
+    final_check = analyze_code(current_fix, language)
+    if not final_check["has_issues"]:
+        return current_fix
+    
+    logger.warning(f"AI fix validation failed after {max_retries} retries")
+    return None
+
+
 def heal_code_snippet(
     file_path: str,
     snippet_id: str,
@@ -699,10 +811,25 @@ def heal_code_snippet(
             ai_code = client.generate_correction(prompt=prompt, system_prompt=HEALING_SYSTEM_PROMPT)
             
             if ai_code and ai_code.strip() != code.strip():
-                healed_code = ai_code
-                changes.append("Enhanced fix using Claude 3 via Amazon Bedrock")
-                confidence = 0.90
-                logger.info(f"Bedrock AI provided enhanced fix for {snippet_id}")
+                # Validate AI fix via retry loop (defects 1.1-1.3)
+                validated_fix = _validate_and_retry_fix(
+                    original_code=code,
+                    ai_fix=ai_code.strip(),
+                    language=language,
+                    max_retries=2,
+                )
+                
+                if validated_fix:
+                    healed_code = validated_fix
+                    changes.append("Enhanced fix using Claude 3 via Amazon Bedrock (validated)")
+                    confidence = 0.95
+                    logger.info(f"Bedrock AI provided validated fix for {snippet_id}")
+                else:
+                    # AI fix failed validation — still use it but lower confidence
+                    healed_code = ai_code.strip()
+                    changes.append("Fix via Claude 3 (auto-fix validation failed — review recommended)")
+                    confidence = 0.60
+                    logger.warning(f"Bedrock AI fix for {snippet_id} could not be validated")
         except Exception as e:
             logger.warning(f"Bedrock AI unavailable for {snippet_id}: {str(e)[:100]}")
             # Static analysis + sandbox results are still used

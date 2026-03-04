@@ -189,3 +189,46 @@ class TestHealingTasks:
         """Test healing with missing parameters."""
         with pytest.raises(ValueError, match="are required"):
             heal_documentation_file(file_path="", validation_results=None)
+
+
+class TestValidationRetryLoop:
+    """Tests for _validate_and_retry_fix validation loop."""
+
+    @patch('doc_healing.workers.tasks.analyze_code')
+    def test_validates_fix_on_first_try(self, mock_analyze, mock_queue_backend):
+        """Fix passes validation immediately."""
+        mock_analyze.return_value = {"has_issues": False, "errors": []}
+        
+        from doc_healing.workers.tasks import _validate_and_retry_fix
+        result = _validate_and_retry_fix("bad code", "good code", "python")
+        assert result == "good code"
+        mock_analyze.assert_called_once()
+
+    @patch('doc_healing.workers.tasks.BedrockLLMClient')
+    @patch('doc_healing.workers.tasks.analyze_code')
+    def test_retries_on_failed_validation(self, mock_analyze, mock_bedrock_cls, mock_queue_backend):
+        """Fix fails first validation, succeeds after retry."""
+        mock_analyze.side_effect = [
+            {"has_issues": True, "errors": [{"type": "SyntaxError", "message": "bad"}]},
+            {"has_issues": False, "errors": []},
+        ]
+        mock_client = MagicMock()
+        mock_client.generate_correction.return_value = "better code"
+        mock_bedrock_cls.return_value = mock_client
+        
+        from doc_healing.workers.tasks import _validate_and_retry_fix
+        result = _validate_and_retry_fix("original", "bad fix", "c")
+        assert result == "better code"
+
+    @patch('doc_healing.workers.tasks.BedrockLLMClient')
+    @patch('doc_healing.workers.tasks.analyze_code')
+    def test_returns_none_after_max_retries(self, mock_analyze, mock_bedrock_cls, mock_queue_backend):
+        """All retries exhausted — returns None."""
+        mock_analyze.return_value = {"has_issues": True, "errors": [{"type": "SyntaxError", "message": "still bad"}]}
+        mock_client = MagicMock()
+        mock_client.generate_correction.return_value = "still bad code"
+        mock_bedrock_cls.return_value = mock_client
+        
+        from doc_healing.workers.tasks import _validate_and_retry_fix
+        result = _validate_and_retry_fix("original", "bad fix", "c", max_retries=2)
+        assert result is None

@@ -1,5 +1,6 @@
 import json
 import logging
+import re
 from typing import Optional
 import boto3
 from botocore.exceptions import ClientError
@@ -7,23 +8,20 @@ from doc_healing.config import get_settings
 
 logger = logging.getLogger(__name__)
 
+
 class BedrockLLMClient:
     def __init__(self, region_name: str = "ap-south-1"):
-        """Initialize the Bedrock client."""
+        """Initialize the Bedrock client with boto3/IAM credentials."""
         settings = get_settings()
-        
-        # In production this will pick up credentials from the environment or EC2/ECS role.
+
         self.client = boto3.client(service_name='bedrock-runtime', region_name=region_name)
         self.default_model_id = settings.bedrock_model_id
         self.fallback_model_id = settings.bedrock_fallback_model_id
 
     def generate_correction(self, prompt: str, system_prompt: str, use_fallback: bool = False) -> Optional[str]:
-        """
-        Send a prompt to Anthropic Claude via Bedrock to get a code correction.
-        """
+        """Send a prompt to Claude 3 Haiku via Bedrock to get a code correction."""
         model_id = self.fallback_model_id if use_fallback else self.default_model_id
-        
-        # Format for Claude 3 Messages API
+
         body = {
             "anthropic_version": "bedrock-2023-05-31",
             "max_tokens": 4096,
@@ -34,7 +32,7 @@ class BedrockLLMClient:
                     "content": prompt
                 }
             ],
-            "temperature": 0.1, # Low temperature for more deterministic code generation
+            "temperature": 0.1,
         }
 
         try:
@@ -45,23 +43,21 @@ class BedrockLLMClient:
                 contentType="application/json",
                 accept="application/json",
             )
-            
+
             response_body = json.loads(response.get('body').read())
-            
-            # The response from Claude 3 Messages API has content as an array of blocks
+
             content_blocks = response_body.get('content', [])
             if content_blocks and len(content_blocks) > 0:
                 raw_text = content_blocks[0].get('text', '')
                 return self._strip_code_fences(raw_text)
-                
+
             return None
-            
+
         except ClientError as e:
             error_code = e.response.get('Error', {}).get('Code')
             error_message = e.response.get('Error', {}).get('Message')
             logger.error(f"Bedrock API error: {e} (Code: {error_code}, Message: {error_message})")
-            
-            # Try fallback if not already using it and it's a transient or capacity error (e.g. ThrottlingException)
+
             if not use_fallback and error_code in ['ThrottlingException', 'ModelStreamErrorException', 'InternalServerException']:
                 logger.info(f"Falling back to {self.fallback_model_id}...")
                 return self.generate_correction(prompt, system_prompt, use_fallback=True)
@@ -73,9 +69,7 @@ class BedrockLLMClient:
     @staticmethod
     def _strip_code_fences(text: str) -> str:
         """Remove markdown code fences from AI response."""
-        import re
         text = text.strip()
-        # Match ```language\n...\n``` or ```\n...\n```
         match = re.match(r'^```\w*\s*\n(.*?)```\s*$', text, re.DOTALL)
         if match:
             return match.group(1).strip()

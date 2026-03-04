@@ -1,14 +1,18 @@
 """Tests for the multi-language static analyzer."""
 
 import pytest
+from unittest.mock import patch, MagicMock
 from doc_healing.llm.static_analyzer import (
     analyze_python_code,
     analyze_javascript_code,
+    analyze_c_code,
     analyze_generic_code,
     analyze_code,
     detect_language,
     format_errors_markdown,
     _check_brackets,
+    _generate_fix,
+    generate_fix_with_ai,
 )
 
 
@@ -52,6 +56,46 @@ class TestAnalyzeJavaScript:
     def test_valid_js_no_issues(self):
         result = analyze_javascript_code("const x = 42;")
         assert not result["has_issues"]
+
+
+class TestAnalyzeCCode:
+    """C/C++ security analysis tests."""
+
+    @patch('doc_healing.llm.static_analyzer.generate_fix_with_ai', return_value=None)
+    def test_detects_unsafe_scanf(self, _mock):
+        result = analyze_c_code('#include <stdio.h>\nscanf("%s", buf);')
+        assert result["has_issues"]
+        assert any("scanf" in e["message"] and "Unsafe" in e["message"] for e in result["errors"])
+        assert result["analysis_method"] == "static_c"
+
+    @patch('doc_healing.llm.static_analyzer.generate_fix_with_ai', return_value=None)
+    def test_detects_unsafe_gets(self, _mock):
+        result = analyze_c_code('#include <stdio.h>\ngets(buf);')
+        assert result["has_issues"]
+        assert any("gets" in e["message"] and "buffer overflow" in e["message"].lower() for e in result["errors"])
+
+    @patch('doc_healing.llm.static_analyzer.generate_fix_with_ai', return_value=None)
+    def test_detects_printf_scanf_nesting(self, _mock):
+        result = analyze_c_code('printf(scanf("%d"))')
+        assert result["has_issues"]
+        assert any("printf(scanf())" in e["message"] for e in result["errors"])
+
+    @patch('doc_healing.llm.static_analyzer.generate_fix_with_ai', return_value=None)
+    def test_detects_missing_stdio(self, _mock):
+        result = analyze_c_code('printf("hello");')
+        assert result["has_issues"]
+        assert any("stdio.h" in e["message"] for e in result["errors"])
+
+    @patch('doc_healing.llm.static_analyzer.generate_fix_with_ai', return_value=None)
+    def test_no_missing_stdio_when_included(self, _mock):
+        result = analyze_c_code('#include <stdio.h>\nprintf("hello");')
+        assert not any("stdio.h" in e["message"] for e in result["errors"])
+
+    def test_dispatcher_routes_c(self):
+        """C code goes through analyze_c_code, not analyze_generic_code."""
+        result = analyze_code('printf("hello");', language="c")
+        assert result["analysis_method"] == "static_c"
+        assert result["detected_language"] == "c"
 
 
 class TestAnalyzeGeneric:
@@ -165,3 +209,88 @@ class TestFormatErrors:
         md = format_errors_markdown([{"type": "ReferenceError", "message": "undef"}])
         assert "`ReferenceError`" in md
         assert "undef" in md
+
+
+class TestGenerateFixPython:
+    """Tests for _generate_fix SyntaxError bracket fixes."""
+
+    def test_fixes_unclosed_paren(self):
+        code = "print('hello'"
+        errors = [{"type": "SyntaxError", "message": "unexpected EOF while parsing", "line": 1}]
+        fixed = _generate_fix(code, errors, {})
+        assert fixed.count("(") == fixed.count(")")
+
+    def test_fixes_unclosed_bracket(self):
+        code = "x = [1, 2, 3"
+        errors = [{"type": "SyntaxError", "message": "unexpected EOF", "line": 1}]
+        fixed = _generate_fix(code, errors, {})
+        assert fixed.count("[") == fixed.count("]")
+
+
+class TestGenerateFixWithAI:
+    """Tests for AI-powered multi-language fix generation."""
+
+    @patch('doc_healing.llm.bedrock_client.BedrockLLMClient')
+    def test_generates_fix_for_javascript(self, mock_client_cls):
+        mock_client = MagicMock()
+        mock_client.generate_correction.return_value = "console.log('hello');"
+        mock_client_cls.return_value = mock_client
+
+        errors = [{"type": "ReferenceError", "message": "'printf' is not defined in JavaScript"}]
+        result = generate_fix_with_ai("printf('hello');", "javascript", errors)
+        assert result is not None
+        assert "console.log" in result
+
+    @patch('doc_healing.llm.bedrock_client.BedrockLLMClient')
+    def test_generates_fix_for_c_security(self, mock_client_cls):
+        mock_client = MagicMock()
+        mock_client.generate_correction.return_value = 'char buf[100];\nfgets(buf, sizeof(buf), stdin);'
+        mock_client_cls.return_value = mock_client
+
+        errors = [{"type": "SecurityWarning", "message": "unsafe scanf usage"}]
+        result = generate_fix_with_ai('char buf[100];\nscanf("%s", buf);', "c", errors)
+        assert result is not None
+        assert "fgets" in result
+
+    @patch('doc_healing.llm.bedrock_client.BedrockLLMClient')
+    def test_returns_none_on_failure(self, mock_client_cls):
+        mock_client_cls.side_effect = Exception("Bedrock unavailable")
+
+        errors = [{"type": "SyntaxError", "message": "bad syntax"}]
+        result = generate_fix_with_ai("bad code", "rust", errors)
+        assert result is None
+
+    @patch('doc_healing.llm.bedrock_client.BedrockLLMClient')
+    def test_returns_none_when_fix_same_as_original(self, mock_client_cls):
+        mock_client = MagicMock()
+        mock_client.generate_correction.return_value = "printf('hello');"
+        mock_client_cls.return_value = mock_client
+
+        errors = [{"type": "ReferenceError", "message": "test"}]
+        result = generate_fix_with_ai("printf('hello');", "javascript", errors)
+        assert result is None
+
+
+class TestAnalyzersReturnFixes:
+    """Verify JS and generic analyzers attempt to return fixed_code."""
+
+    @patch('doc_healing.llm.static_analyzer.generate_fix_with_ai')
+    def test_js_analyzer_returns_fixed_code(self, mock_ai_fix):
+        mock_ai_fix.return_value = "console.log('hello');"
+        result = analyze_javascript_code("printf('hello');")
+        assert result["has_issues"]
+        assert result["fixed_code"] == "console.log('hello');"
+
+    @patch('doc_healing.llm.static_analyzer.generate_fix_with_ai')
+    def test_generic_analyzer_returns_fixed_code(self, mock_ai_fix):
+        mock_ai_fix.return_value = "puts 'hello'"
+        result = analyze_generic_code("ptf('hello')", language="ruby")
+        assert result["has_issues"]
+        assert result["fixed_code"] == "puts 'hello'"
+
+    @patch('doc_healing.llm.static_analyzer.generate_fix_with_ai')
+    def test_no_fix_when_no_errors(self, mock_ai_fix):
+        result = analyze_javascript_code("const x = 42;")
+        assert not result["has_issues"]
+        assert result["fixed_code"] is None
+        mock_ai_fix.assert_not_called()
