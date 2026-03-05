@@ -19,36 +19,35 @@ class BedrockLLMClient:
         self.fallback_model_id = settings.bedrock_fallback_model_id
 
     def generate_correction(self, prompt: str, system_prompt: str, use_fallback: bool = False) -> Optional[str]:
-        """Send a prompt to Claude 3 Haiku via Bedrock to get a code correction."""
-        model_id = self.fallback_model_id if use_fallback else self.default_model_id
+        """Send a prompt to the configured Bedrock model to get a code correction.
 
-        body = {
-            "anthropic_version": "bedrock-2023-05-31",
-            "max_tokens": 4096,
-            "system": system_prompt,
-            "messages": [
-                {
-                    "role": "user",
-                    "content": prompt
-                }
-            ],
-            "temperature": 0.1,
-        }
+        Uses the Converse API which works with both Amazon Nova and Anthropic Claude models.
+        Primary model: Amazon Nova Pro (no Marketplace subscription needed).
+        Fallback model: Claude 4 Sonnet via APAC cross-region inference.
+        """
+        model_id = self.fallback_model_id if use_fallback else self.default_model_id
 
         try:
             logger.info(f"Invoking Bedrock model: {model_id}")
-            response = self.client.invoke_model(
+            response = self.client.converse(
                 modelId=model_id,
-                body=json.dumps(body),
-                contentType="application/json",
-                accept="application/json",
+                system=[{"text": system_prompt}],
+                messages=[
+                    {
+                        "role": "user",
+                        "content": [{"text": prompt}],
+                    }
+                ],
+                inferenceConfig={
+                    "maxTokens": 4096,
+                    "temperature": 0.1,
+                },
             )
 
-            response_body = json.loads(response.get('body').read())
-
-            content_blocks = response_body.get('content', [])
+            output_message = response.get("output", {}).get("message", {})
+            content_blocks = output_message.get("content", [])
             if content_blocks and len(content_blocks) > 0:
-                raw_text = content_blocks[0].get('text', '')
+                raw_text = content_blocks[0].get("text", "")
                 return self._strip_code_fences(raw_text)
 
             return None
@@ -58,7 +57,10 @@ class BedrockLLMClient:
             error_message = e.response.get('Error', {}).get('Message')
             logger.error(f"Bedrock API error: {e} (Code: {error_code}, Message: {error_message})")
 
-            if not use_fallback and error_code in ['ThrottlingException', 'ModelStreamErrorException', 'InternalServerException']:
+            if not use_fallback and error_code in [
+                'ThrottlingException', 'ModelStreamErrorException',
+                'InternalServerException', 'AccessDeniedException',
+            ]:
                 logger.info(f"Falling back to {self.fallback_model_id}...")
                 return self.generate_correction(prompt, system_prompt, use_fallback=True)
             return None

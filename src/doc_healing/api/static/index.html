@@ -130,8 +130,8 @@
         </ul>
 
         <div class="note">
-          <strong>Powered by Amazon Bedrock</strong> — OASIS uses Claude 3 via Amazon Bedrock for intelligent code
-          reasoning, with automatic fallback and graceful degradation when AI is unavailable.
+          <strong>Powered by Amazon Bedrock</strong> — OASIS uses Amazon Nova Pro (primary) with Claude 4 Sonnet (fallback)
+          via Amazon Bedrock for intelligent code reasoning, with automatic failover and graceful degradation when AI is unavailable.
         </div>
       </article>
 
@@ -404,7 +404,7 @@ $ git push origin test-oasis</code></pre>
             <div class="arch-boxes">
               <div class="arch-box highlight">Validation Worker<br><small>Static Analysis (AST)</small></div>
               <div class="arch-arrow">→</div>
-              <div class="arch-box highlight">Healing Engine<br><small>Bedrock AI (Claude 3)</small></div>
+              <div class="arch-box highlight">Healing Engine<br><small>Bedrock AI (Nova Pro)</small></div>
               <div class="arch-arrow">→</div>
               <div class="arch-box">Commit Fix<br><small>PR Comment / Patch</small></div>
             </div>
@@ -449,7 +449,7 @@ $ git push origin test-oasis</code></pre>
             </tr>
             <tr>
               <td>AI Engine</td>
-              <td>Amazon Bedrock (Claude 3)</td>
+              <td>Amazon Bedrock (Nova Pro + Claude 4 Sonnet)</td>
               <td>Intelligent code reasoning</td>
             </tr>
             <tr>
@@ -562,10 +562,12 @@ $ git push origin test-oasis</code></pre>
 
         <h2>☁️ Amazon Bedrock AI</h2>
         <ul>
-          <li><strong>Model:</strong> Claude 3 Sonnet (primary), Claude 3 Haiku (fallback)</li>
+          <li><strong>Primary Model:</strong> Amazon Nova Pro via APAC cross-region inference</li>
+          <li><strong>Fallback Model:</strong> Claude 4 Sonnet via APAC cross-region inference</li>
+          <li><strong>API:</strong> Bedrock Converse API (model-agnostic, supports both Nova and Claude)</li>
           <li><strong>Temperature:</strong> 0.1 (low, for deterministic code generation)</li>
-          <li><strong>Fallback:</strong> Automatic fallback on throttling or capacity errors</li>
-          <li><strong>Graceful degradation:</strong> Static analysis results are used if Bedrock is unavailable</li>
+          <li><strong>Auto-failover:</strong> If Nova Pro fails (throttling, errors), automatically tries Claude 4 Sonnet</li>
+          <li><strong>Graceful degradation:</strong> Static analysis results are used if Bedrock is entirely unavailable</li>
         </ul>
 
         <h2>📦 Queue System</h2>
@@ -932,8 +934,8 @@ for node in ast.walk(tree):
         </ul>
 
         <h2>Layer 3: Amazon Bedrock AI (Always Attempted)</h2>
-        <p>OASIS sends the code, static analysis results, and sandbox errors to Claude 3 via Amazon Bedrock for deeper
-          reasoning. The AI reviews for logic errors, edge cases, performance issues, and subtle bugs.</p>
+        <p>OASIS sends the code, static analysis results, and sandbox errors to Amazon Nova Pro (with Claude 4 Sonnet fallback)
+          via Amazon Bedrock for deeper reasoning. The AI reviews for logic errors, edge cases, performance issues, and subtle bugs.</p>
         <ul>
           <li><strong>Graceful fallback</strong> — If Bedrock is unavailable, static + sandbox results are used</li>
           <li><strong>Confidence scoring</strong> — AI fixes get 0.90 confidence vs 0.75 for static-only fixes</li>
@@ -1064,7 +1066,7 @@ print(greet("Alice"))</textarea>
             <strong>Bedrock AI</strong>
           </li>
           <li>Confidence scores are included so you know how certain the fix is</li>
-          <li>AI suggestions are always marked with <em>"Enhanced fix using Claude 3 via Amazon Bedrock"</em></li>
+          <li>AI suggestions are always marked with <em>"Enhanced fix using Amazon Bedrock AI"</em></li>
           <li>If AI is unavailable, the comment explicitly states only static analysis was used</li>
         </ul>
 

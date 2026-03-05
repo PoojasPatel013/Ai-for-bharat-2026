@@ -10,7 +10,7 @@ The Self-Healing Documentation Engine automatically validates code snippets in d
 
 - **Automatic Validation**: Validates all code snippets in documentation on every pull request
 - **Sandbox Execution**: Runs Python snippets in isolated subprocesses with timeout and memory limits
-- **Auto-Correction**: AI-powered correction of broken code using Amazon Bedrock (Claude 3)
+- **Auto-Correction**: AI-powered correction of broken code using Amazon Bedrock (Nova Pro + Claude 4 Sonnet)
 - **Multi-Language Support**: Python, JavaScript, TypeScript, Java, Go, Ruby, Rust, C/C++, PHP, Bash
 - **Hybrid Analysis**: Static analysis (AST/compile) + runtime execution + AI for deep code review
 - **GitHub/GitLab Integration**: Seamless bot integration with status checks and comments
@@ -40,7 +40,7 @@ The system is built as a cloud-native microservices architecture:
 |-------|-----------|---------|
 | API | Python 3.11 + FastAPI | Webhook handlers, REST API |
 | Queue | Redis Queue (RQ) | Async task processing (3 queues) |
-| AI | Amazon Bedrock (Claude 3) | Code healing via `boto3` |
+| AI | Amazon Bedrock (Nova Pro + Claude 4 Sonnet) | Code healing via `boto3` Converse API |
 | Sandbox (Py) | `subprocess` + `ulimit` | Isolated Python execution (5s timeout, 50MB) |
 | Sandbox (JS) | `node --check` | Fast JS/TS syntax validation |
 | Database | PostgreSQL + SQLAlchemy | Persistent storage (9 tables, Alembic migrations) |

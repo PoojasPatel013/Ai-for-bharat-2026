@@ -32,7 +32,7 @@ A GitHub/GitLab bot that automatically validates and heals broken code snippets 
 
 1. **Webhook** — GitHub sends a PR event to OASIS
 2. **Analysis** — OASIS extracts code from docs, runs static analysis (AST, compile, heuristics)
-3. **AI Healing** — Amazon Bedrock (Claude 3) generates intelligent fix suggestions
+3. **AI Healing** — Amazon Bedrock (Nova Pro + Claude 4 Sonnet) generates intelligent fix suggestions
 4. **PR Comment** — OASIS posts a detailed report with errors and fixes
 
 ## Supported Languages

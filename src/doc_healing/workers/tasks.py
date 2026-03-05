@@ -821,13 +821,13 @@ def heal_code_snippet(
                 
                 if validated_fix:
                     healed_code = validated_fix
-                    changes.append("Enhanced fix using Claude 3 via Amazon Bedrock (validated)")
+                    changes.append("Enhanced fix using Amazon Bedrock AI (validated)")
                     confidence = 0.95
                     logger.info(f"Bedrock AI provided validated fix for {snippet_id}")
                 else:
                     # AI fix failed validation — still use it but lower confidence
                     healed_code = ai_code.strip()
-                    changes.append("Fix via Claude 3 (auto-fix validation failed — review recommended)")
+                    changes.append("Fix via Amazon Bedrock AI (auto-fix validation failed — review recommended)")
                     confidence = 0.60
                     logger.warning(f"Bedrock AI fix for {snippet_id} could not be validated")
         except Exception as e:

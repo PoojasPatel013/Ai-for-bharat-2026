@@ -183,7 +183,7 @@ def _generate_fix(code: str, errors: List[Dict], func_defs: Dict) -> str:
 
 
 def generate_fix_with_ai(code: str, language: str, errors: List[Dict]) -> Optional[str]:
-    """Generate a fix for any language using Claude 3 Haiku via Bedrock.
+    """Generate a fix for any language using Amazon Bedrock (Nova Pro / Claude 4 Sonnet).
     
     Uses specialized prompts for C/C++ security issues and a general
     multi-language prompt for everything else.

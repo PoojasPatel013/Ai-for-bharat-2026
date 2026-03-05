@@ -56,8 +56,8 @@ class Settings(BaseSettings):
     api_port: int = 8000
 
     # LLM Configuration
-    bedrock_model_id: str = "anthropic.claude-3-haiku-20240307-v1:0"
-    bedrock_fallback_model_id: str = "anthropic.claude-3-haiku-20240307-v1:0"
+    bedrock_model_id: str = "apac.amazon.nova-pro-v1:0"
+    bedrock_fallback_model_id: str = "apac.anthropic.claude-sonnet-4-20250514-v1:0"
 
     # GitHub integration
     github_token: Optional[str] = None
