@@ -199,10 +199,4 @@ validation:
 └── pyproject.toml           # Project dependencies
 ```
 
-## License
 
-[Add your license here]
-
-## Contributing
-
-[Add contributing guidelines here]
